@@ -1,7 +1,8 @@
 ############################################################
 ## CSC 384, Intro to AI, University of Toronto.
-## Assignment 1 Starter Code
+## Assignment 1
 ## v1.0
+## Implemented by Irene Li
 ############################################################
 
 from typing import List
@@ -9,9 +10,10 @@ import heapq
 from heapq import heappush, heappop
 import time
 import argparse
-import math # for infinity
+import math  # for infinity
 
 from board import *
+
 
 def is_goal(state):
     """
@@ -22,13 +24,12 @@ def is_goal(state):
     :return: True or False
     :rtype: bool
     """
-
-    raise NotImplementedError
+    return sorted(state.board.storage) == sorted(state.board.boxes)
 
 
 def get_path(state):
     """
-    Return a list of states containing the nodes on the path 
+    Return a list of states containing the nodes on the path
     from the initial state to the given state in order.
 
     :param state: The current state.
@@ -37,7 +38,10 @@ def get_path(state):
     :rtype: List[State]
     """
 
-    raise NotImplementedError
+    path_list = []
+    while state.depth != 0:
+        path_list.append(state.parent)
+    return path_list[::-1]
 
 
 def get_successors(state):
@@ -51,7 +55,44 @@ def get_successors(state):
     :rtype: List[State]
     """
 
-    raise NotImplementedError
+    successor_list = []
+    for pos, i in enumerate(state.board.robots):
+        movement = [(-1, 0), (0, -1), (1, 0), (0, 1)]
+        for dx, dy in movement:
+            succ_state = State()
+            succ_state.parent = state
+            succ_state.hfn = state.hfn
+            succ_state.f = state.f
+            succ_state.depth = state.depth + 1
+            succ_state.board = state.board
+            test_pos = (pos[0] + dx, pos[1] + dy)
+
+            # Robot cannot walk into another robot or the wall
+            if (test_pos in state.board.robots) or (test_pos in state.board.obstacles):
+                continue
+
+            elif test_pos in state.board.boxes:
+                new_box = (test_pos[0] + dx, test_pos[1] + dy)
+
+                # Robot cannot push 2 boxes or a box into other robots or the wall
+                if (
+                    (new_box in state.board.robots)
+                    or (new_box in state.board.obstacles)
+                    or (new_box in state.board.boxes)
+                ):
+                    continue
+
+                # Create a new set of box positions
+                succ_state.board.boxes = frozenset(
+                    new_box if box_pos == test_pos else box_pos
+                    for box_pos in state.board.boxes
+                )
+
+            # Update the robot positions
+            succ_state.board.robots[i] = test_pos
+            successor_list.append(succ_state)
+
+    return successor_list
 
 
 def dfs(init_board):
@@ -97,7 +138,7 @@ def heuristic_basic(board):
     Returns the heuristic value for the given board
     based on the Manhattan Distance Heuristic function.
 
-    Returns the sum of the Manhattan distances between each box 
+    Returns the sum of the Manhattan distances between each box
     and its closest storage point.
 
     :param board: The current board.
@@ -140,10 +181,10 @@ def solve_puzzle(board: Board, algorithm: str, hfn):
 
     time_start = time.time()
 
-    if algorithm == 'a_star':
+    if algorithm == "a_star":
         print("Executing A* search")
         path, step = a_star(board, hfn)
-    elif algorithm == 'dfs':
+    elif algorithm == "dfs":
         print("Executing DFS")
         path, step = dfs(board)
     else:
@@ -154,15 +195,15 @@ def solve_puzzle(board: Board, algorithm: str, hfn):
 
     if not path:
 
-        print('No solution for this puzzle')
+        print("No solution for this puzzle")
         return []
 
     else:
 
-        print('Goal state found: ')
+        print("Goal state found: ")
         path[-1].board.display()
 
-        print('Solution is: ')
+        print("Solution is: ")
 
         counter = 0
         while counter < len(path):
@@ -171,8 +212,8 @@ def solve_puzzle(board: Board, algorithm: str, hfn):
             print()
             counter += 1
 
-        print('Solution cost: {}'.format(step))
-        print('Time taken: {:.2f}s'.format(time_elapsed))
+        print("Solution cost: {}".format(step))
+        print("Time taken: {:.2f}s".format(time_elapsed))
 
         return path
 
@@ -184,36 +225,36 @@ if __name__ == "__main__":
         "--inputfile",
         type=str,
         required=True,
-        help="The file that contains the puzzle."
+        help="The file that contains the puzzle.",
     )
     parser.add_argument(
         "--outputfile",
         type=str,
         required=True,
-        help="The file that contains the solution to the puzzle."
+        help="The file that contains the solution to the puzzle.",
     )
     parser.add_argument(
         "--algorithm",
         type=str,
         required=True,
-        choices=['a_star', 'dfs'],
-        help="The searching algorithm."
+        choices=["a_star", "dfs"],
+        help="The searching algorithm.",
     )
     parser.add_argument(
         "--heuristic",
         type=str,
         required=False,
         default=None,
-        choices=['zero', 'basic', 'advanced'],
-        help="The heuristic used for any heuristic search."
+        choices=["zero", "basic", "advanced"],
+        help="The heuristic used for any heuristic search.",
     )
     args = parser.parse_args()
 
     # set the heuristic function
     heuristic = heuristic_zero
-    if args.heuristic == 'basic':
+    if args.heuristic == "basic":
         heuristic = heuristic_basic
-    elif args.heuristic == 'advanced':
+    elif args.heuristic == "advanced":
         heuristic = heuristic_advanced
 
     # read the boards from the file
