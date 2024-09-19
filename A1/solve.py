@@ -27,6 +27,15 @@ def is_goal(state):
     return sorted(state.board.storage) == sorted(state.board.boxes)
 
 
+def get_path_helper(state, path_list):
+    path_list.append(state)
+    if state.depth == 0:
+        return path_list
+
+    path_list = get_path_helper(state.parent, path_list)
+    return path_list
+
+
 def get_path(state):
     """
     Return a list of states containing the nodes on the path
@@ -39,8 +48,7 @@ def get_path(state):
     """
 
     path_list = []
-    while state.depth != 0:
-        path_list.append(state.parent)
+    path_list = get_path_helper(state, path_list)
     return path_list[::-1]
 
 
@@ -56,23 +64,24 @@ def get_successors(state):
     """
 
     successor_list = []
-    for pos, i in enumerate(state.board.robots):
+    # robots = state.board.robots
+    for i, pos in enumerate(state.board.robots):
         movement = [(-1, 0), (0, -1), (1, 0), (0, 1)]
         for dx, dy in movement:
-            succ_state = State()
-            succ_state.parent = state
-            succ_state.hfn = state.hfn
-            succ_state.f = state.f
-            succ_state.depth = state.depth + 1
-            succ_state.board = state.board
+            boxes = frozenset()
+            robots = frozenset()
+
             test_pos = (pos[0] + dx, pos[1] + dy)
 
             # Robot cannot walk into another robot or the wall
             if (test_pos in state.board.robots) or (test_pos in state.board.obstacles):
                 continue
 
-            elif test_pos in state.board.boxes:
+            if test_pos in state.board.boxes:
                 new_box = (test_pos[0] + dx, test_pos[1] + dy)
+
+                if test_pos in state.board.storage:
+                    continue
 
                 # Robot cannot push 2 boxes or a box into other robots or the wall
                 if (
@@ -83,16 +92,55 @@ def get_successors(state):
                     continue
 
                 # Create a new set of box positions
-                succ_state.board.boxes = frozenset(
+                boxes = frozenset(
                     new_box if box_pos == test_pos else box_pos
                     for box_pos in state.board.boxes
                 )
+            else:
+                boxes = state.board.boxes
 
             # Update the robot positions
-            succ_state.board.robots[i] = test_pos
+            robots = frozenset(
+                test_pos if r_pos == pos else r_pos for r_pos in state.board.robots
+            )
+            succ_board = Board(
+                state.board.name,
+                state.board.width,
+                state.board.height,
+                robots,
+                boxes,
+                state.board.storage,
+                state.board.obstacles,
+            )
+            succ_state = State(
+                succ_board,
+                state.hfn,
+                state.f,
+                state.depth + 1,
+                state,
+            )
             successor_list.append(succ_state)
 
     return successor_list
+
+
+def dfs_visit(state, visited):
+
+    if is_goal(state):
+        return state
+
+    # Prevent the robot from visiting the same state (e.g. loop around the map)
+    for index, visited_state in enumerate(visited):
+        if state.board == visited_state.board:
+            return None
+    visited.append(state)
+
+    # Loop through all successors of the current state and perform depth-first search
+    for new_state in get_successors(state):
+        s = dfs_visit(new_state, visited)
+        if s != None and is_goal(s):
+            return s
+    return None
 
 
 def dfs(init_board):
@@ -110,6 +158,12 @@ def dfs(init_board):
     :rtype: List[State], int
     """
 
+    init_state = State(init_board, None, 0, 0)
+    last_state = dfs_visit(init_state, [])
+    if last_state != None:
+        path = get_path(last_state)
+        return path, len(path)
+    return [], -1
     raise NotImplementedError
 
 
