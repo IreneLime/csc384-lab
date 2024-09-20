@@ -24,6 +24,7 @@ def is_goal(state):
     :return: True or False
     :rtype: bool
     """
+
     return sorted(state.board.storage) == sorted(state.board.boxes)
 
 
@@ -112,10 +113,13 @@ def get_successors(state):
                 state.board.storage,
                 state.board.obstacles,
             )
+            f = state.f
+            if state.hfn != None:
+                f = state.hfn(succ_board) + state.depth + 1
             succ_state = State(
                 succ_board,
                 state.hfn,
-                state.f,
+                f,
                 state.depth + 1,
                 state,
             )
@@ -164,7 +168,22 @@ def dfs(init_board):
         path = get_path(last_state)
         return path, len(path)
     return [], -1
-    raise NotImplementedError
+
+
+def a_star_visit(frontier, visited):
+    (f, state) = heapq.heappop(frontier)
+    if is_goal(state):
+        return state
+    for index, visited_state in enumerate(visited):
+        if state.board == visited_state.board:
+            return None
+    visited.append(state)
+    for new_state in get_successors(state):
+        heapq.heappush(frontier, (new_state.f, new_state))
+    s = a_star_visit(frontier, visited)
+    if s != None and is_goal(s):
+        return s
+    return None
 
 
 def a_star(init_board, hfn):
@@ -184,7 +203,15 @@ def a_star(init_board, hfn):
     :rtype: List[State], int
     """
 
-    raise NotImplementedError
+    frontier = []
+    visited = []
+    init_state = State(init_board, heuristic_basic, heuristic_basic(init_board), 0)
+    heapq.heappush(frontier, (init_state.f, init_state))
+    last_state = a_star_visit(frontier, visited)
+    if last_state != None:
+        path = get_path(last_state)
+        return path, len(path)
+    return [], -1
 
 
 def heuristic_basic(board):
@@ -201,7 +228,33 @@ def heuristic_basic(board):
     :rtype: int
     """
 
-    raise NotImplementedError
+    storage = sorted(board.storage)
+    box = sorted(board.boxes)
+    box_new = []
+    for s_pos in storage:
+        min_dist = 0
+        first = True
+        min_index = 0
+        for i, b_pos in enumerate(box):
+            if first:
+                min_dist = (
+                    (s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2
+                ) ** 0.5
+                first = False
+                continue
+            dist = math.dist(s_pos, b_pos)
+
+            if dist < min_dist:
+                min_distance = dist
+                min_index = i
+        box_new.append(box[min_index])
+        del box[min_index]
+    distance = []
+    for i in range(len(storage)):
+        dx = abs(storage[i][0] - box_new[i][0])
+        dy = abs(storage[i][1] - box_new[i][1])
+        distance.append(dx + dy)
+    return sum(distance)
 
 
 def heuristic_advanced(board):

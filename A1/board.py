@@ -4,23 +4,33 @@
 ## v1.0
 ############################################################
 
+
 from typing import List
 
 # Define characters for the elements in the puzzle
-CHAR_WALL = '#'
-CHAR_STORAGE = '.'
-CHAR_BOX = '?'
-CHAR_BOX_IN_STORAGE = '*' # a box is at a storage point.
-CHAR_ROBOT = 'a'
-CHAR_ROBOT_IN_STORAGE = 'A' # a robot is at a storage point.
+CHAR_WALL = "#"
+CHAR_STORAGE = "."
+CHAR_BOX = "?"
+CHAR_BOX_IN_STORAGE = "*"  # a box is at a storage point.
+CHAR_ROBOT = "a"
+CHAR_ROBOT_IN_STORAGE = "A"  # a robot is at a storage point.
+
 
 class Board:
     """
     Represents the puzzle board.
     """
 
-    def __init__(self, name: str, width: int, height: int, robots: object, boxes: object, storage: object,
-                 obstacles: object) -> object:
+    def __init__(
+        self,
+        name: str,
+        width: int,
+        height: int,
+        robots: object,
+        boxes: object,
+        storage: object,
+        obstacles: object,
+    ) -> object:
         """
         Creates a Sokoban board.
 
@@ -30,15 +40,18 @@ class Board:
         :type width: int
         :param height: the height of the Sokoban board
         :type height: int
-        :param robots: positions for each robot that is on the board. Each robot position is a tuple (x, y), 
+        :param robots: positions for each robot that is on the board. Each robot position is a tuple (x, y),
                        that denotes the robot’s x and y position.
         :type robots: List[tuple]
-        :param boxes: positions for each box in a frozenset. Each position is an (x, y) tuple.
-        :type boxes: frozenset[tuple]
-        :param storage: positions for each storage bin that is on the board.
-        :type storage: frozenset[tuple]
-        :param obstacles: locations of all of the obstacles (i.e. walls) on the board.
-        :type obstacles: frozenset[tuple]
+
+        :param boxes: positions for each box in a list. Each position is an (x, y) tuple.
+        :type boxes: List[tuple]
+
+        :param storage: positions for all the storage points in a list.
+        :type storage: List[tuple]
+
+        :param obstacles: locations of all of the obstacles (i.e. walls) in a list.
+        :type obstacles: List[tuple]
         :rtype: Board
         """
         self.name = name
@@ -50,23 +63,23 @@ class Board:
         self.obstacles = obstacles
 
     def __hash__(self):
-        '''
+        """
         Return a data item that can be used as a dictionary key to UNIQUELY represent a board.
-        '''
+        """
         return hash(self.__str__())
 
     def display(self):
         print(self.__str__())
 
     def __str__(self):
-        '''
+        """
         Returns a string representation of a state that can be printed to stdout.
-        '''
+        """
         map = []
         for y in range(0, self.height):
             row = []
             for x in range(0, self.width):
-                row += [' ']
+                row += [" "]
             map += [row]
 
         # storage points are represented by dots.
@@ -91,11 +104,11 @@ class Board:
             else:
                 map[box[1]][box[0]] = CHAR_BOX
 
-        s = ''
+        s = ""
         for row in map:
             for char in row:
                 s += char
-            s += '\n'
+            s += "\n"
 
         return s
 
@@ -110,7 +123,7 @@ class State:
     """
     State class wrapping a Board with some extra current state information.
     Note that State and Board are different. Board has the locations of the cars.
-    State has a Board and some extra information that is relevant to the search: 
+    State has a Board and some extra information that is relevant to the search:
     heuristic function, f value, current depth and parent.
     """
 
@@ -121,7 +134,7 @@ class State:
         :param parent: The parent of current state.
         :type parent: Optional[State]
         :param hfn: The heuristic function.
-        :type hfn: Optional[Heuristic] (a Heuristic is a function that consumes a Board and 
+        :type hfn: Optional[Heuristic] (a Heuristic is a function that consumes a Board and
                    produces a numeric heuristic value)
         :param f: The f value of current state.
         :type f: int
@@ -135,12 +148,6 @@ class State:
         self.depth = depth
 
         self.id = hash(board)  # The id for breaking ties.
-
-    # customized eq for object comparison.
-    # def __eq__(self, other):
-    #     if isinstance(other, State):
-    #         return self.f == other.f and self.id == other.id
-    #     return False
 
     # customized lt for object comparison.
     def __lt__(self, other):
@@ -160,9 +167,9 @@ def heuristic_zero(board: Board):
 
 def read_from_file(filename: str) -> Board:
     """
-    Reads in the puzzle in the given file 
+    Reads in the puzzle in the given file
     and returns a Board
-    
+
     :param filename: The name of the given file.
     :type filename: str
     :return: the loaded Board
@@ -177,14 +184,16 @@ def read_from_file(filename: str) -> Board:
 
     row = 0
     board = Board("", -1, -1, [], [], [], [])
+
     for line in puzzle_file:
-        if counter == 0: # first line has name of puzzle
+
+        if counter == 0:  # first line has name of puzzle
             board.name = line.strip()
-        elif counter == 1: # second line has width
+        elif counter == 1:  # second line has width
             board.width = int(line)
-        elif counter == 2: # third line has height
+        elif counter == 2:  # third line has height
             board.height = int(line)
-        else: # the following lines describe cars
+        else:  # the following lines describe cars
             for col in range(len(line)):
                 char = line[col]
                 if char == CHAR_WALL:
@@ -202,9 +211,8 @@ def read_from_file(filename: str) -> Board:
                 elif char.isalpha() and char.islower():
                     board.robots.append((col, row))
             row += 1
+
         counter += 1
+
     puzzle_file.close()
     return board
-
-
-
