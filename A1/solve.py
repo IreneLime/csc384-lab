@@ -11,6 +11,7 @@ from heapq import heappush, heappop
 import time
 import argparse
 import math  # for infinity
+import copy
 
 from board import *
 
@@ -67,10 +68,10 @@ def get_successors(state):
     successor_list = []
     # robots = state.board.robots
     for i, pos in enumerate(state.board.robots):
-        movement = [(-1, 0), (0, -1), (1, 0), (0, 1)]
+        movement = [(0, 1), (0, -1), (1, 0), (-1, 0)]
         for dx, dy in movement:
-            boxes = frozenset()
-            robots = frozenset()
+            boxes = []
+            robots = []
 
             test_pos = (pos[0] + dx, pos[1] + dy)
 
@@ -81,8 +82,8 @@ def get_successors(state):
             if test_pos in state.board.boxes:
                 new_box = (test_pos[0] + dx, test_pos[1] + dy)
 
-                if test_pos in state.board.storage:
-                    continue
+                # if test_pos in state.board.storage:
+                #     continue
 
                 # Robot cannot push 2 boxes or a box into other robots or the wall
                 if (
@@ -93,17 +94,17 @@ def get_successors(state):
                     continue
 
                 # Create a new set of box positions
-                boxes = frozenset(
+                boxes = [
                     new_box if box_pos == test_pos else box_pos
                     for box_pos in state.board.boxes
-                )
+                ]
             else:
                 boxes = state.board.boxes
 
             # Update the robot positions
-            robots = frozenset(
+            robots = [
                 test_pos if r_pos == pos else r_pos for r_pos in state.board.robots
-            )
+            ]
             succ_board = Board(
                 state.board.name,
                 state.board.width,
@@ -113,11 +114,9 @@ def get_successors(state):
                 state.board.storage,
                 state.board.obstacles,
             )
-            f = state.f
-            if state.hfn != None:
-                f = state.hfn(succ_board) + state.depth + 1
+            f = state.depth + 1 + state.hfn(succ_board)
             succ_state = State(
-                succ_board,
+                copy.deepcopy(succ_board),
                 state.hfn,
                 f,
                 state.depth + 1,
@@ -131,20 +130,19 @@ def get_successors(state):
 def dfs_visit(state, visited):
 
     if is_goal(state):
-        return state
+        print(state.board)
+        return state, visited
 
-    # Prevent the robot from visiting the same state (e.g. loop around the map)
-    for index, visited_state in enumerate(visited):
-        if state.board == visited_state.board:
-            return None
-    visited.append(state)
+    visited.append(copy.deepcopy(state.id))
 
     # Loop through all successors of the current state and perform depth-first search
     for new_state in get_successors(state):
-        s = dfs_visit(new_state, visited)
-        if s != None and is_goal(s):
-            return s
-    return None
+        if new_state.id not in visited:
+            s, visited = dfs_visit(new_state, visited)
+            if s != None and is_goal(s):
+                print(s.board)
+                return s, visited
+    return None, visited
 
 
 def dfs(init_board):
@@ -162,28 +160,12 @@ def dfs(init_board):
     :rtype: List[State], int
     """
 
-    init_state = State(init_board, None, 0, 0)
-    last_state = dfs_visit(init_state, [])
+    init_state = State(init_board, heuristic_zero, 0, 0)
+    last_state, visited = dfs_visit(init_state, [])
     if last_state != None:
         path = get_path(last_state)
-        return path, len(path)
+        return path, len(path) - 1
     return [], -1
-
-
-def a_star_visit(frontier, visited):
-    (f, state) = heapq.heappop(frontier)
-    if is_goal(state):
-        return state
-    for index, visited_state in enumerate(visited):
-        if state.board == visited_state.board:
-            return None
-    visited.append(state)
-    for new_state in get_successors(state):
-        heapq.heappush(frontier, (new_state.f, new_state))
-    s = a_star_visit(frontier, visited)
-    if s != None and is_goal(s):
-        return s
-    return None
 
 
 def a_star(init_board, hfn):
@@ -203,14 +185,32 @@ def a_star(init_board, hfn):
     :rtype: List[State], int
     """
 
-    frontier = []
-    visited = []
+    frontier = []  # Contains sets with f value and state object pairs
+    visited = {}  # Dictionary with state board id and state object
     init_state = State(init_board, heuristic_basic, heuristic_basic(init_board), 0)
     heapq.heappush(frontier, (init_state.f, init_state))
-    last_state = a_star_visit(frontier, visited)
-    if last_state != None:
-        path = get_path(last_state)
-        return path, len(path)
+
+    # When frontier is not empty
+    while frontier:
+        (_, state) = heapq.heappop(frontier)
+
+        # Return final goal
+        if is_goal(state):
+            path = get_path(state)
+            return path, len(path) - 1
+        visited[state.id] = state
+
+        # Add new paths to frontier
+        for new_state in get_successors(state):
+            # New board configuration
+            if new_state.id not in visited:
+                heapq.heappush(frontier, (new_state.f, new_state))
+
+            # Same board configuration
+            else:
+                # Repace if the f value of the current board config is less than the saved one
+                if new_state.f < (visited[new_state.id]).f:
+                    heapq.heappush(frontier, (new_state.f, new_state))
     return [], -1
 
 
@@ -231,25 +231,30 @@ def heuristic_basic(board):
     storage = sorted(board.storage)
     box = sorted(board.boxes)
     box_new = []
+
+    # Iterate through storage locations
     for s_pos in storage:
-        min_dist = 0
+        min_distance = 0
         first = True
         min_index = 0
+        # Find the closest box
         for i, b_pos in enumerate(box):
             if first:
-                min_dist = (
+                min_distance = (
                     (s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2
                 ) ** 0.5
                 first = False
                 continue
-            dist = math.dist(s_pos, b_pos)
+            dist = ((s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2) ** 0.5
 
-            if dist < min_dist:
+            if dist < min_distance:
                 min_distance = dist
                 min_index = i
         box_new.append(box[min_index])
-        del box[min_index]
+
     distance = []
+    # Calculate the total distance of the boxes to their corresponding closest
+    # storage locations
     for i in range(len(storage)):
         dx = abs(storage[i][0] - box_new[i][0])
         dy = abs(storage[i][1] - box_new[i][1])
