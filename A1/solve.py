@@ -230,35 +230,39 @@ def heuristic_basic(board):
 
     storage = sorted(board.storage)
     box = sorted(board.boxes)
-    box_new = []
+    distance = []
 
-    # Iterate through storage locations
-    for s_pos in storage:
+    # Iterate through box locations
+    for b_pos in box:
         min_distance = 0
         first = True
         min_index = 0
         # Find the closest box
-        for i, b_pos in enumerate(box):
+        for i, s_pos in enumerate(storage):
+            # Box already on a storage position
+            if b_pos == s_pos:
+                min_distance = 0
+                break
+
+            # Set the first min distance
             if first:
                 min_distance = (
                     (s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2
                 ) ** 0.5
                 first = False
                 continue
+
+            # Calculate the direct distances
             dist = ((s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2) ** 0.5
 
             if dist < min_distance:
                 min_distance = dist
                 min_index = i
-        box_new.append(box[min_index])
+        if min_distance != 0:
+            dx = abs(b_pos[0] - storage[min_index][0])
+            dy = abs(b_pos[1] - storage[min_index][1])
+            distance.append(dx + dy)
 
-    distance = []
-    # Calculate the total distance of the boxes to their corresponding closest
-    # storage locations
-    for i in range(len(storage)):
-        dx = abs(storage[i][0] - box_new[i][0])
-        dy = abs(storage[i][1] - box_new[i][1])
-        distance.append(dx + dy)
     return sum(distance)
 
 
