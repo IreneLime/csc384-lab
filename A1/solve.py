@@ -136,7 +136,8 @@ def dfs_visit(state, visited):
     visited.append(copy.deepcopy(state.id))
 
     # Loop through all successors of the current state and perform depth-first search
-    for new_state in get_successors(state):
+    successors = get_successors(state)
+    for new_state in successors:
         if new_state.id not in visited:
             s, visited = dfs_visit(new_state, visited)
             if s != None and is_goal(s):
@@ -186,6 +187,7 @@ def a_star(init_board, hfn):
     """
 
     frontier = []  # Contains sets with f value and state object pairs
+    heapq.heapify(frontier)
     visited = {}  # Dictionary with state board id and state object
     init_state = State(init_board, heuristic_basic, heuristic_basic(init_board), 0)
     heapq.heappush(frontier, (init_state.f, init_state))
@@ -201,7 +203,8 @@ def a_star(init_board, hfn):
         visited[state.id] = state
 
         # Add new paths to frontier
-        for new_state in get_successors(state):
+        successors = get_successors(state)
+        for new_state in successors:
             # New board configuration
             if new_state.id not in visited:
                 heapq.heappush(frontier, (new_state.f, new_state))
@@ -228,8 +231,48 @@ def heuristic_basic(board):
     :rtype: int
     """
 
-    storage = sorted(board.storage)
-    box = sorted(board.boxes)
+    # Get rid of overlaps because distance = 0
+    overlap = set(board.storage) & set(board.boxes)
+    box = [b for b in board.boxes if b not in overlap]
+    distance = 0
+
+    # Iterate through box locations
+    for b_pos in box:
+        min_distance = 0
+        first = True
+        min_index = 0
+        # Find the closest box
+        for i, s_pos in enumerate(board.storage):
+            dx = abs(b_pos[0] - s_pos[0])
+            dy = abs(b_pos[1] - s_pos[1])
+            dist = dx + dy
+            if first:
+                min_distance = dist
+                first = False
+                continue
+
+            if dist < min_distance:
+                min_distance = dist
+                min_index = i
+        dx = abs(b_pos[0] - board.storage[min_index][0])
+        dy = abs(b_pos[1] - board.storage[min_index][1])
+        distance += dx + dy
+
+    return distance
+
+
+def heuristic_advanced(board):
+    """
+    An advanced heuristic of your own choosing and invention.
+
+    :param board: The current board.
+    :type board: Board
+    :return: The heuristic value.
+    :rtype: int
+    """
+
+    overlap = set(board.storage) & set(board.boxes)
+    box = [b for b in board.boxes if b not in overlap]
     distance = []
 
     # Iterate through box locations
@@ -238,12 +281,7 @@ def heuristic_basic(board):
         first = True
         min_index = 0
         # Find the closest box
-        for i, s_pos in enumerate(storage):
-            # Box already on a storage position
-            if b_pos == s_pos:
-                min_distance = 0
-                break
-
+        for i, s_pos in enumerate(board.storage):
             # Set the first min distance
             if first:
                 min_distance = (
@@ -258,25 +296,11 @@ def heuristic_basic(board):
             if dist < min_distance:
                 min_distance = dist
                 min_index = i
-        if min_distance != 0:
-            dx = abs(b_pos[0] - storage[min_index][0])
-            dy = abs(b_pos[1] - storage[min_index][1])
-            distance.append(dx + dy)
+        dx = abs(b_pos[0] - board.storage[min_index][0])
+        dy = abs(b_pos[1] - board.storage[min_index][1])
+        distance.append(dx + dy)
 
     return sum(distance)
-
-
-def heuristic_advanced(board):
-    """
-    An advanced heuristic of your own choosing and invention.
-
-    :param board: The current board.
-    :type board: Board
-    :return: The heuristic value.
-    :rtype: int
-    """
-
-    raise NotImplementedError
 
 
 def solve_puzzle(board: Board, algorithm: str, hfn):
