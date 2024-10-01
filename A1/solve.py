@@ -11,7 +11,6 @@ from heapq import heappush, heappop
 import time
 import argparse
 import math  # for infinity
-import copy
 
 from board import *
 
@@ -82,9 +81,6 @@ def get_successors(state):
             if test_pos in state.board.boxes:
                 new_box = (test_pos[0] + dx, test_pos[1] + dy)
 
-                # if test_pos in state.board.storage:
-                #     continue
-
                 # Robot cannot push 2 boxes or a box into other robots or the wall
                 if (
                     (new_box in state.board.robots)
@@ -114,9 +110,12 @@ def get_successors(state):
                 state.board.storage,
                 state.board.obstacles,
             )
+            # succ_board = state.board
+            # succ_board.robots = robots
+            # succ_board.boxes = boxes
             f = state.depth + 1 + state.hfn(succ_board)
             succ_state = State(
-                copy.deepcopy(succ_board),
+                succ_board,
                 state.hfn,
                 f,
                 state.depth + 1,
@@ -185,22 +184,26 @@ def a_star(init_board, hfn):
     :return: (the path to goal state, solution cost)
     :rtype: List[State], int
     """
-
+    # set storing ids or hashes for the explored states, and use a proper heap (provided by the heapq library) for the frontier.
     frontier = []  # Contains sets with f value and state object pairs
     heapq.heapify(frontier)
     visited = {}  # Dictionary with state board id and state object
-    init_state = State(init_board, heuristic_basic, heuristic_basic(init_board), 0)
+    # visited = set()
+    init_state = State(init_board, hfn, hfn(init_board), 0)
     heapq.heappush(frontier, (init_state.f, init_state))
+    # heapq.heappush(frontier, init_state)
 
     # When frontier is not empty
     while frontier:
         (_, state) = heapq.heappop(frontier)
+        # state = heapq.heappop(frontier)
 
         # Return final goal
         if is_goal(state):
             path = get_path(state)
             return path, len(path) - 1
-        visited[state.id] = state
+        visited[state.id] = state.f
+        # visited.add(state.id)
 
         # Add new paths to frontier
         successors = get_successors(state)
@@ -208,12 +211,14 @@ def a_star(init_board, hfn):
             # New board configuration
             if new_state.id not in visited:
                 heapq.heappush(frontier, (new_state.f, new_state))
+                # heapq.heappush(frontier, new_state)
 
             # Same board configuration
             else:
-                # Repace if the f value of the current board config is less than the saved one
-                if new_state.f < (visited[new_state.id]).f:
+                # Replace if the f value of the current board config is less than the saved one
+                if new_state.f < visited[new_state.id]:
                     heapq.heappush(frontier, (new_state.f, new_state))
+                    # heapq.heappush(frontier, new_state)
     return [], -1
 
 
@@ -238,25 +243,16 @@ def heuristic_basic(board):
 
     # Iterate through box locations
     for b_pos in box:
-        min_distance = 0
-        first = True
-        min_index = 0
+        min_distance = math.inf
         # Find the closest box
         for i, s_pos in enumerate(board.storage):
             dx = abs(b_pos[0] - s_pos[0])
             dy = abs(b_pos[1] - s_pos[1])
             dist = dx + dy
-            if first:
-                min_distance = dist
-                first = False
-                continue
 
             if dist < min_distance:
                 min_distance = dist
-                min_index = i
-        dx = abs(b_pos[0] - board.storage[min_index][0])
-        dy = abs(b_pos[1] - board.storage[min_index][1])
-        distance += dx + dy
+        distance += min_distance
 
     return distance
 
@@ -271,35 +267,50 @@ def heuristic_advanced(board):
     :rtype: int
     """
 
-    overlap = set(board.storage) & set(board.boxes)
-    box = [b for b in board.boxes if b not in overlap]
-    distance = []
+    storage = sorted(board.storage)
+    box = sorted(board.boxes)
+    box_new = []
 
-    # Iterate through box locations
-    for b_pos in box:
+    for b_pos in enumerate(box):
+        left = (b_pos[0] - 1, b_pos[0])
+        right = (b_pos[0] + 1, b_pos[0])
+        up = (b_pos[0], b_pos[0] - 1)
+        down = (b_pos[0], b_pos[0] + 1)
+        if (
+            (left in board.obstacles and up in board.obstacles)
+            or (up in board.obstacles and right in board.obstacles)
+            or (right in board.obstacles and down in board.obstacles)
+            or (down in board.obstacles and left in board.obstacles)
+        ):
+            return math.inf
+
+    # Iterate through storage locations
+    for s_pos in storage:
         min_distance = 0
         first = True
         min_index = 0
         # Find the closest box
-        for i, s_pos in enumerate(board.storage):
-            # Set the first min distance
+        for i, b_pos in enumerate(box):
             if first:
                 min_distance = (
                     (s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2
                 ) ** 0.5
                 first = False
                 continue
-
-            # Calculate the direct distances
             dist = ((s_pos[0] - b_pos[0]) ** 2 + (s_pos[1] - b_pos[1]) ** 2) ** 0.5
 
             if dist < min_distance:
                 min_distance = dist
                 min_index = i
-        dx = abs(b_pos[0] - board.storage[min_index][0])
-        dy = abs(b_pos[1] - board.storage[min_index][1])
-        distance.append(dx + dy)
+        box_new.append(box[min_index])
 
+    distance = []
+    # Calculate the total distance of the boxes to their corresponding closest
+    # storage locations
+    for i in range(len(storage)):
+        dx = abs(storage[i][0] - box_new[i][0])
+        dy = abs(storage[i][1] - box_new[i][1])
+        distance.append(dx + dy)
     return sum(distance)
 
 
