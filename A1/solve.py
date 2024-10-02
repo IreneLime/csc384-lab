@@ -251,12 +251,13 @@ def heuristic_advanced(board):
     :return: The heuristic value.
     :rtype: int
     """
+    # Ignore boxes that are already in the target position
     no_overlap_box = list(set(board.boxes) - set(board.storage))
     if not no_overlap_box:
         return 0
 
     # Avoid dead corners
-    for i, b_pos in enumerate(no_overlap_box):
+    for b_pos in no_overlap_box:
         left = (b_pos[0] - 1, b_pos[1])
         right = (b_pos[0] + 1, b_pos[1])
         up = (b_pos[0], b_pos[1] - 1)
@@ -271,36 +272,29 @@ def heuristic_advanced(board):
 
     no_overlap_storage = list(set(board.storage) - set(board.boxes))
 
-    storage = sorted(no_overlap_storage)
-    box = sorted(no_overlap_box)
-    closest_storage = []
+    distance = 0
+    movement = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
-    # Iterate through box locations
-    for b_pos in box:
-        min_distance = math.inf
-        min_index = 0
-        # Find the closest storage
-        for i, s_pos in enumerate(storage):
-            dx = abs(b_pos[0] - s_pos[0])
-            dy = abs(b_pos[1] - s_pos[1])
-            dist = dx + dy
+    # Dominate heuristic basic by considering the wall constraint
+    for b_pos in no_overlap_box:
+        frontier = [(0, b_pos)]
+        visited = set()
+        # Use BFS to search for the closest storage location
+        while frontier:
+            cost, pos = frontier.pop(0)
+            if pos in no_overlap_storage:
+                distance += cost
+                # Dominate heuristic basic by restricting duplicate boxes in the same storage location
+                no_overlap_storage.remove(pos)
+                break
 
-            if dist < min_distance:
-                min_distance = dist
-                min_index = i
-        min = storage[min_index]
-        # Ensure there is no overlap in the storage <-> box pair
-        closest_storage.append(min)
-        storage.remove(min)
-
-    distance = []
-    # Calculate the total distance of the boxes to their corresponding closest
-    # storage locations
-    for i in range(len(box)):
-        dx = abs(box[i][0] - closest_storage[i][0])
-        dy = abs(box[i][1] - closest_storage[i][1])
-        distance.append(dx + dy)
-    return sum(distance)
+            for dx, dy in movement:
+                test_pos = (b_pos[0] + dx, b_pos[1] + dy)
+                # Visit non-wall positions
+                if test_pos not in board.obstacles and test_pos not in visited:
+                    visited.add(test_pos)
+                    frontier.append((cost + 1, test_pos))
+    return distance
 
 
 def solve_puzzle(board: Board, algorithm: str, hfn):
