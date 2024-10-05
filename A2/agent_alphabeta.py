@@ -7,6 +7,7 @@
 from mancala_game import Board, play_move
 from utils import *
 
+
 def alphabeta_max_basic(board, curr_player, alpha, beta, heuristic_func):
     """
     Perform Alpha-Beta Search for MAX player.
@@ -22,8 +23,33 @@ def alphabeta_max_basic(board, curr_player, alpha, beta, heuristic_func):
 
     :return the best move and its minimax value.
     """
+    # Obtain all possible moves, if terminal then reurn None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if not all_possible_moves:
+        return None, heuristic_func(board, curr_player)
+
+    # Initialize best move and best value
+    h_value = -math.inf
+    best_move = board
+
+    for moves in all_possible_moves:
+        p = board.pockets
+        p[curr_player] = moves
+        next_board = Board(p, board.mancalas)
+        # If the current value is greater than the best value: optimal
+        _, value = alphabeta_min_basic(
+            next_board, curr_player, alpha, beta, heuristic_func
+        )
+        h_value = value
+        best_move = next_board
+        if h_value > alpha:
+            alpha = h_value
+        if alpha >= beta:
+            return best_move, h_value
+    return best_move, h_value
 
     raise NotImplementedError
+
 
 def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
     """
@@ -40,8 +66,33 @@ def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
 
     :return the best move and its minimax value.
     """
+    # Obtain all possible moves, if terminal then return None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if not all_possible_moves:
+        return None, heuristic_func(board, curr_player)
+
+    # Initialize best move and best value
+    h_value = math.inf
+    best_move = board
+
+    for moves in all_possible_moves:
+        p = board.pockets
+        p[curr_player] = moves
+        next_board = Board(p, board.mancalas)
+        # If the current value is less than the best value: optimal
+        _, value = alphabeta_max_basic(
+            next_board, curr_player, alpha, beta, heuristic_func
+        )
+        h_value = value
+        best_move = next_board
+        if h_value > beta:
+            beta = h_value
+        if alpha >= beta:
+            return best_move, h_value
+    return best_move, h_value
 
     raise NotImplementedError
+
 
 def alphabeta_max_limit(board, curr_player, alpha, beta, heuristic_func, depth_limit):
     """
@@ -62,6 +113,7 @@ def alphabeta_max_limit(board, curr_player, alpha, beta, heuristic_func, depth_l
 
     raise NotImplementedError
 
+
 def alphabeta_min_limit(board, curr_player, alpha, beta, heuristic_func, depth_limit):
     """
     Perform Alpha-Beta Search for MIN player up to the given depth limit.
@@ -81,9 +133,12 @@ def alphabeta_min_limit(board, curr_player, alpha, beta, heuristic_func, depth_l
 
     raise NotImplementedError
 
-def alphabeta_max_limit_opt(board, curr_player, alpha, beta, heuristic_func, depth_limit, optimizations):
+
+def alphabeta_max_limit_opt(
+    board, curr_player, alpha, beta, heuristic_func, depth_limit, optimizations
+):
     """
-    Perform Alpha-Beta Search for MAX player up to the given depth limit 
+    Perform Alpha-Beta Search for MAX player up to the given depth limit
     with the option of using additional optimizations.
 
     Return the best move and its estimated minimax value.
@@ -95,17 +150,20 @@ def alphabeta_max_limit_opt(board, curr_player, alpha, beta, heuristic_func, dep
     :param beta: current beta value
     :param heuristic_func: the heuristic function
     :param depth_limit: the depth limit
-    :param optimizations: a dictionary in which we keep data structures 
+    :param optimizations: a dictionary in which we keep data structures
         for additional optimizations. It contains a cache to be used for caching.
- 
+
     :return the best move and its estimated minimax value.
     """
 
     raise NotImplementedError
 
-def alphabeta_min_limit_opt(board, curr_player, alpha, beta, heuristic_func, depth_limit, optimizations):
+
+def alphabeta_min_limit_opt(
+    board, curr_player, alpha, beta, heuristic_func, depth_limit, optimizations
+):
     """
-    Perform Alpha-Beta Search for MIN player up to the given depth limit 
+    Perform Alpha-Beta Search for MIN player up to the given depth limit
     with the option of using additional optimizations.
 
     Return the best move and its estimated minimax value.
@@ -117,7 +175,7 @@ def alphabeta_min_limit_opt(board, curr_player, alpha, beta, heuristic_func, dep
     :param beta: current beta value
     :param heuristic_func: the heuristic function
     :param depth_limit: the depth limit
-    :param optimizations: a dictionary in which we keep data structures 
+    :param optimizations: a dictionary in which we keep data structures
         for additional optimizations. It contains a cache to be used for caching.
 
     :return the best move and its estimated minimax value.
@@ -130,6 +188,7 @@ def alphabeta_min_limit_opt(board, curr_player, alpha, beta, heuristic_func, dep
 ## DO NOT MODIFY THE CODE BELOW.
 ###############################################################################
 
+
 def run_ai():
     """
     This function establishes communication with the game manager.
@@ -140,17 +199,17 @@ def run_ai():
     print("Mancala AI")  # First line is the name of this AI
     arguments = input().split(",")
 
-    player  = int(arguments[0]) # Player color
-    limit   = int(arguments[1]) # Depth limit
-    opt     = int(arguments[2]) # Optimizations
-    hfunc   = int(arguments[3]) # Heuristic Function
+    player = int(arguments[0])  # Player color
+    limit = int(arguments[1])  # Depth limit
+    opt = int(arguments[2])  # Optimizations
+    hfunc = int(arguments[3])  # Heuristic Function
 
     optimizations = {}
 
-    if (opt == 1): 
+    if opt == 1:
         opt = True
         optimizations["cache"] = {}
-    else: 
+    else:
         opt = False
 
     eprint("Running Alpha-Beta Search")
@@ -190,16 +249,19 @@ def run_ai():
             alpha = float("-Inf")
             beta = float("Inf")
             if opt:
-                move, value = alphabeta_max_limit_opt(board, player, alpha, beta, 
-                    heuristic_func, limit, optimizations)
+                move, value = alphabeta_max_limit_opt(
+                    board, player, alpha, beta, heuristic_func, limit, optimizations
+                )
 
             elif limit >= 0:
-                move, value = alphabeta_max_limit(board, player, alpha, beta, 
-                    heuristic_func, limit)
+                move, value = alphabeta_max_limit(
+                    board, player, alpha, beta, heuristic_func, limit
+                )
 
             else:
-                move, value = alphabeta_max_basic(board, player, alpha, beta, 
-                    heuristic_func)
+                move, value = alphabeta_max_basic(
+                    board, player, alpha, beta, heuristic_func
+                )
 
             print("{},{}".format(move, value))
 

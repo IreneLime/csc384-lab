@@ -21,8 +21,25 @@ def minimax_max_basic(board, curr_player, heuristic_func):
 
     :return the best move and its minimax value according to minimax search.
     """
+    # Obtain all possible moves, if terminal then reurn None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if not all_possible_moves:
+        return None, heuristic_func(board, curr_player)
 
-    raise NotImplementedError
+    # Initialize best move and best value
+    h_value = -math.inf
+    best_move = -math.inf
+
+    # max_{s' in succ(s)} minimax-value(s')
+    for move in all_possible_moves:
+        next_board = play_move(board, curr_player, move)
+        # Update if the new value is more than the previous optimal value
+        value = heuristic_func(next_board, curr_player)
+        if value > h_value:
+            h_value = value
+            best_move = move
+
+    return best_move, h_value
 
 
 def minimax_min_basic(board, curr_player, heuristic_func):
@@ -38,6 +55,24 @@ def minimax_min_basic(board, curr_player, heuristic_func):
 
     :return the best move and its minimax value according to minimax search.
     """
+    # Obtain all possible moves, if terminal then reurn None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if not all_possible_moves:
+        return None, heuristic_func(board, curr_player)
+
+    # Initialize best move and best value
+    h_value = math.inf
+    best_move = math.inf
+
+    # min_{s' in succ(s)} minimax-value(s')
+    for move in all_possible_moves:
+        next_board = play_move(board, curr_player, move)
+        value = heuristic_func(next_board, curr_player)
+        # Update if the new value is less than the previous optimal value
+        if value < h_value:
+            h_value = value
+            best_move = move
+    return best_move, h_value
 
     raise NotImplementedError
 
@@ -56,6 +91,23 @@ def minimax_max_limit(board, curr_player, heuristic_func, depth_limit):
 
     :return the best move and its minimmax value estimated by our heuristic function.
     """
+    # Obtain all possible moves, if terminal then reurn None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if not all_possible_moves:
+        return None, heuristic_func(board, curr_player)
+
+    # Initialize best move and best value
+    h_value = -math.inf
+    best_move = board
+
+    for move in all_possible_moves:
+        next_board = play_move(board, curr_player, move)
+        # If the current value is greater than the best value: optimal
+        _, value = minimax_min_basic(next_board, curr_player, heuristic_func)
+        if value > h_value:
+            h_value = value
+            best_move = move
+    return best_move, h_value
 
     raise NotImplementedError
 
@@ -74,13 +126,32 @@ def minimax_min_limit(board, curr_player, heuristic_func, depth_limit):
 
     :return the best move and its minimmax value estimated by our heuristic function.
     """
+    # Obtain all possible moves, if terminal then return None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if not all_possible_moves:
+        return None, heuristic_func(board, curr_player)
+
+    # Initialize best move and best value
+    h_value = math.inf
+    best_move = board
+
+    for move in all_possible_moves:
+        next_board = play_move(board, curr_player, move)
+        # If the current value is less than the best value: optimal
+        _, value = minimax_max_basic(next_board, curr_player, heuristic_func)
+        if value < h_value:
+            h_value = value
+            best_move = next_board
+    return best_move, h_value
 
     raise NotImplementedError
 
 
-def minimax_max_limit_opt(board, curr_player, heuristic_func, depth_limit, optimizations):
+def minimax_max_limit_opt(
+    board, curr_player, heuristic_func, depth_limit, optimizations
+):
     """
-    Perform Minimax Search for MAX player up to the given depth limit 
+    Perform Minimax Search for MAX player up to the given depth limit
     with the option of using additional optimizations.
 
     Return the best move and its minimmax value estimated by our heuristic function.
@@ -90,7 +161,7 @@ def minimax_max_limit_opt(board, curr_player, heuristic_func, depth_limit, optim
     :param curr_player: the ccurrent player
     :param heuristic_func: the heuristic function
     :param depth_limit: the depth limit
-    :param optimizations: a dictionary in which we keep data structures 
+    :param optimizations: a dictionary in which we keep data structures
         for additional optimizations. It contains a cache to be used for caching.
 
     :return the best move and its minimmax value estimated by our heuristic function.
@@ -99,11 +170,13 @@ def minimax_max_limit_opt(board, curr_player, heuristic_func, depth_limit, optim
     raise NotImplementedError
 
 
-def minimax_min_limit_opt(board, curr_player, heuristic_func, depth_limit, optimizations):
+def minimax_min_limit_opt(
+    board, curr_player, heuristic_func, depth_limit, optimizations
+):
     """
-    Perform Minimax Search for MIN player up to the given depth limit 
+    Perform Minimax Search for MIN player up to the given depth limit
     with the option of using additional optimizations.
-    
+
     Return the best move and its minimmax value estimated by our heuristic function.
     If the board is a terminal state, return None as its best move.
 
@@ -111,7 +184,7 @@ def minimax_min_limit_opt(board, curr_player, heuristic_func, depth_limit, optim
     :param curr_player: the current player
     :param heuristic_func: the heuristic function
     :param depth_limit: the depth limit
-    :param optimizations: a dictionary in which we keep data structures 
+    :param optimizations: a dictionary in which we keep data structures
         for additional optimizations. It contains a cache to be used for caching.
 
     :return the best move and its minimmax value estimated by our heuristic function.
@@ -124,6 +197,7 @@ def minimax_min_limit_opt(board, curr_player, heuristic_func, depth_limit, optim
 ## DO NOT MODIFY THE CODE BELOW.
 ###############################################################################
 
+
 def run_ai():
     """
     This function establishes communication with the game manager.
@@ -134,21 +208,20 @@ def run_ai():
     print("Mancala AI")  # First line is the name of this AI
     arguments = input().split(",")
 
-    player  = int(arguments[0]) # Player color
-    limit   = int(arguments[1]) # Depth limit
-    opt     = int(arguments[2]) # Optimizations
-    hfunc   = int(arguments[3]) # Heuristic Function
+    player = int(arguments[0])  # Player color
+    limit = int(arguments[1])  # Depth limit
+    opt = int(arguments[2])  # Optimizations
+    hfunc = int(arguments[3])  # Heuristic Function
 
     optimizations = {}
 
-    if (opt == 1): 
+    if opt == 1:
         opt = True
         optimizations["cache"] = {}
-    else: 
+    else:
         opt = False
 
     eprint("Running MINIMAX")
-
 
     if limit == -1:
         eprint("Depth Limit is OFF")
@@ -183,7 +256,9 @@ def run_ai():
 
             # Select the move and send it to the manager
             if opt:
-                move, value = minimax_max_limit_opt(board, player, heuristic_func, limit, optimizations)
+                move, value = minimax_max_limit_opt(
+                    board, player, heuristic_func, limit, optimizations
+                )
             elif limit >= 0:
                 move, value = minimax_max_limit(board, player, heuristic_func, limit)
             else:

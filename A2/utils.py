@@ -7,6 +7,7 @@
 ###############################################################################
 
 import sys
+import math
 
 ###############################################################################
 ### DO NOT MODIFY THE CODE BELOW
@@ -15,21 +16,26 @@ import sys
 TOP = 0
 BOTTOM = 1
 
+
 ### Errors ###
 class InvalidMoveError(RuntimeError):
     pass
 
+
 class AiTimeoutError(RuntimeError):
     pass
+
 
 ### Functions ###
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+
 def get_opponent(player):
     if player == BOTTOM:
         return TOP
     return BOTTOM
+
 
 ### DO NOT MODIFY THE CODE ABOVE
 ###############################################################################
@@ -37,18 +43,17 @@ def get_opponent(player):
 
 def heuristic_basic(board, player):
     """
-    Compute the heuristic value of the current board for the current player 
+    Compute the heuristic value of the current board for the current player
     based on the basic heuristic function.
 
     :param board: the current board.
     :param player: the current player.
     :return: an estimated utility of the current board for the current player.
     """
+    return board.mancalas[player] - board.mancalas[get_opponent(player)]
 
-    raise NotImplementedError
 
-
-def heuristic_advanced(board, player): 
+def heuristic_advanced(board, player):
     """
     Compute the heuristic value of the current board for the current player
     based on the advanced heuristic function.
@@ -57,5 +62,5 @@ def heuristic_advanced(board, player):
     :param player: the current player.
     :return: an estimated heuristic value of the current board for the current player.
     """
-    
+
     raise NotImplementedError
