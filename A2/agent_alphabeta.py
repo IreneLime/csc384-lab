@@ -26,29 +26,36 @@ def alphabeta_max_basic(board, curr_player, alpha, beta, heuristic_func):
     # Obtain all possible moves, if terminal then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
     if not all_possible_moves:
+        # eprint("return value is " + str(heuristic_func(board, curr_player)))
         return None, heuristic_func(board, curr_player)
 
     # Initialize best move and best value
     h_value = -math.inf
-    best_move = board
+    best_move = -math.inf
 
     for moves in all_possible_moves:
-        p = board.pockets
-        p[curr_player] = moves
-        next_board = Board(p, board.mancalas)
+        next_board = play_move(board, curr_player, moves)
         # If the current value is greater than the best value: optimal
         _, value = alphabeta_min_basic(
-            next_board, curr_player, alpha, beta, heuristic_func
+            next_board, get_opponent(curr_player), alpha, beta, heuristic_func
         )
-        h_value = value
-        best_move = next_board
+        # Update maximum move
+        if value > h_value:
+            h_value = value
+            best_move = moves
+
+        # Update lower bound
         if h_value > alpha:
             alpha = h_value
-        if alpha >= beta:
-            return best_move, h_value
-    return best_move, h_value
 
-    raise NotImplementedError
+        # Prune if alpha beta bounds overlap
+        if alpha >= beta:
+            break
+    #     eprint("move value for curr player is " + str(next_board.mancalas[curr_player]))
+    #     eprint("move value is " + str(moves))
+    #     eprint("value value is " + str(value))
+    # eprint("return value is " + str(h_value))
+    return best_move, h_value
 
 
 def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
@@ -69,26 +76,38 @@ def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
     # Obtain all possible moves, if terminal then return None
     all_possible_moves = board.get_possible_moves(curr_player)
     if not all_possible_moves:
-        return None, heuristic_func(board, curr_player)
+        # eprint(
+        #     "return value is " + str(heuristic_func(board, get_opponent(curr_player)))
+        # )
+        return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
     h_value = math.inf
-    best_move = board
+    best_move = math.inf
 
     for moves in all_possible_moves:
-        p = board.pockets
-        p[curr_player] = moves
-        next_board = Board(p, board.mancalas)
-        # If the current value is less than the best value: optimal
+        next_board = play_move(board, curr_player, moves)
+        # If the current value is greater than the best value: optimal
         _, value = alphabeta_max_basic(
-            next_board, curr_player, alpha, beta, heuristic_func
+            next_board, get_opponent(curr_player), alpha, beta, heuristic_func
         )
-        h_value = value
-        best_move = next_board
-        if h_value > beta:
+        # Update minimum move
+        if value < h_value:
+            h_value = value
+            best_move = moves
+
+        # Update upper bound
+        if h_value < beta:
             beta = h_value
+
+        # Prune if alpha beta bounds overlap
         if alpha >= beta:
-            return best_move, h_value
+            break
+    #     eprint("move value for curr player is " + str(next_board.mancalas[curr_player]))
+    #     eprint("move value is " + str(moves))
+    #     eprint("value value is " + str(value))
+    # eprint("return value is " + str(h_value))
+
     return best_move, h_value
 
     raise NotImplementedError

@@ -21,7 +21,7 @@ def minimax_max_basic(board, curr_player, heuristic_func):
 
     :return the best move and its minimax value according to minimax search.
     """
-    # Obtain all possible moves, if terminal then reurn None
+    # Obtain all possible moves, if terminal then return None
     all_possible_moves = board.get_possible_moves(curr_player)
     if not all_possible_moves:
         return None, heuristic_func(board, curr_player)
@@ -34,10 +34,17 @@ def minimax_max_basic(board, curr_player, heuristic_func):
     for move in all_possible_moves:
         next_board = play_move(board, curr_player, move)
         # Update if the new value is more than the previous optimal value
-        value = heuristic_func(next_board, curr_player)
+        _, value = minimax_min_basic(
+            next_board, get_opponent(curr_player), heuristic_func
+        )
+        # value = heuristic_func(next_board, get_opponent(curr_player))
+        # eprint("move value for curr player is " + str(next_board.mancalas[curr_player]))
+        # eprint("move value is " + str(move))
+        # eprint("value value is " + str(value))
         if value > h_value:
             h_value = value
             best_move = move
+    # eprint("best value is " + str(h_value))
 
     return best_move, h_value
 
@@ -58,7 +65,7 @@ def minimax_min_basic(board, curr_player, heuristic_func):
     # Obtain all possible moves, if terminal then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
     if not all_possible_moves:
-        return None, heuristic_func(board, curr_player)
+        return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
     h_value = math.inf
@@ -67,7 +74,10 @@ def minimax_min_basic(board, curr_player, heuristic_func):
     # min_{s' in succ(s)} minimax-value(s')
     for move in all_possible_moves:
         next_board = play_move(board, curr_player, move)
-        value = heuristic_func(next_board, curr_player)
+        _, value = minimax_max_basic(
+            next_board, get_opponent(curr_player), heuristic_func
+        )
+        # value = heuristic_func(next_board, get_opponent(curr_player))
         # Update if the new value is less than the previous optimal value
         if value < h_value:
             h_value = value
