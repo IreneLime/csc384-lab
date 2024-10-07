@@ -51,10 +51,6 @@ def alphabeta_max_basic(board, curr_player, alpha, beta, heuristic_func):
         # Prune if alpha beta bounds overlap
         if alpha >= beta:
             break
-    #     eprint("move value for curr player is " + str(next_board.mancalas[curr_player]))
-    #     eprint("move value is " + str(moves))
-    #     eprint("value value is " + str(value))
-    # eprint("return value is " + str(h_value))
     return best_move, h_value
 
 
@@ -76,9 +72,6 @@ def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
     # Obtain all possible moves, if terminal then return None
     all_possible_moves = board.get_possible_moves(curr_player)
     if not all_possible_moves:
-        # eprint(
-        #     "return value is " + str(heuristic_func(board, get_opponent(curr_player)))
-        # )
         return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
@@ -103,10 +96,6 @@ def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
         # Prune if alpha beta bounds overlap
         if alpha >= beta:
             break
-    #     eprint("move value for curr player is " + str(next_board.mancalas[curr_player]))
-    #     eprint("move value is " + str(moves))
-    #     eprint("value value is " + str(value))
-    # eprint("return value is " + str(h_value))
 
     return best_move, h_value
 

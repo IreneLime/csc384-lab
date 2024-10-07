@@ -37,14 +37,9 @@ def minimax_max_basic(board, curr_player, heuristic_func):
         _, value = minimax_min_basic(
             next_board, get_opponent(curr_player), heuristic_func
         )
-        # value = heuristic_func(next_board, get_opponent(curr_player))
-        # eprint("move value for curr player is " + str(next_board.mancalas[curr_player]))
-        # eprint("move value is " + str(move))
-        # eprint("value value is " + str(value))
         if value > h_value:
             h_value = value
             best_move = move
-    # eprint("best value is " + str(h_value))
 
     return best_move, h_value
 
@@ -77,7 +72,6 @@ def minimax_min_basic(board, curr_player, heuristic_func):
         _, value = minimax_max_basic(
             next_board, get_opponent(curr_player), heuristic_func
         )
-        # value = heuristic_func(next_board, get_opponent(curr_player))
         # Update if the new value is less than the previous optimal value
         if value < h_value:
             h_value = value
