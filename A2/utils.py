@@ -3,7 +3,7 @@
 # for our AI agents to play the Mancala game.
 #
 # CSC 384 Assignment 2 Starter Code
-# version 1.0
+# version 2.0
 ###############################################################################
 
 import sys
@@ -15,6 +15,7 @@ import math
 ### Global Constants ###
 TOP = 0
 BOTTOM = 1
+TIMEOUT = 60
 
 
 ### Errors ###
