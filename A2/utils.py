@@ -63,5 +63,18 @@ def heuristic_advanced(board, player):
     :param player: the current player.
     :return: an estimated heuristic value of the current board for the current player.
     """
+    total_score = 0
+    opponent = get_opponent(player)
+    diff_store = board.mancalas[player] - board.mancalas[opponent]
+    total_score += diff_store
+    # If the current player has empty pockets
+    for i, value in enumerate(board.pockets[player]):
+        if value == 0:
+            total_score += board.pockets[opponent][i]
+    # If the opponent player has empty pockets
+    for i, value in enumerate(board.pockets[opponent]):
+        if value == 0:
+            total_score -= board.pockets[player][i]
 
+    return total_score
     raise NotImplementedError

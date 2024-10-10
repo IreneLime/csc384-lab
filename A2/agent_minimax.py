@@ -174,8 +174,33 @@ def minimax_max_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its minimmax value estimated by our heuristic function.
     """
+    # # Cache evaluated states
+    # if h_value in optimizations.cache:
 
-    raise NotImplementedError
+    # # Obtain all possible moves, if terminal or if it hits the depth limit
+    # # then return None
+    # all_possible_moves = board.get_possible_moves(curr_player)
+    # if (not all_possible_moves) or (depth_limit <= 0):
+    #     return None, heuristic_func(board, curr_player)
+
+    # # Initialize best move and best value
+    # h_value = -math.inf
+    # best_move = -math.inf
+
+    # # Decrement depth limit every move
+    # depth_limit -= 1
+
+    # for move in all_possible_moves:
+    #     next_board = play_move(board, curr_player, move)
+    #     # If the current value is greater than the best value: optimal
+    #     _, value = minimax_min_limit(
+    #         next_board, get_opponent(curr_player), heuristic_func, depth_limit
+    #     )
+    #     if value > h_value:
+    #         h_value = value
+    #         best_move = move
+    # optimizations.cache[h_value] = board
+    # return best_move, h_value
 
 
 def minimax_min_limit_opt(
@@ -194,8 +219,28 @@ def minimax_min_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its minimmax value estimated by our heuristic function.
     """
+    # Obtain all possible moves, if terminal or depth_limit=0 then return None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if (not all_possible_moves) or (depth_limit <= 0):
+        return None, heuristic_func(board, get_opponent(curr_player))
 
-    raise NotImplementedError
+    # Initialize best move and best value
+    h_value = math.inf
+    best_move = math.inf
+
+    # Decrement depth limit every move
+    depth_limit -= 1
+
+    for move in all_possible_moves:
+        next_board = play_move(board, curr_player, move)
+        # If the current value is less than the best value: optimal
+        _, value = minimax_max_limit(
+            next_board, get_opponent(curr_player), heuristic_func, depth_limit
+        )
+        if value < h_value:
+            h_value = value
+            best_move = move
+    return best_move, h_value
 
 
 ###############################################################################

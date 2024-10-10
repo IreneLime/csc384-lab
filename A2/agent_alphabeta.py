@@ -233,7 +233,45 @@ def alphabeta_max_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its estimated minimax value.
     """
+    """
+    # Obtain all possible moves, if terminal or depth_limit=0 then reurn None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if (not all_possible_moves) or (depth_limit <= 0):
+        # eprint("return value is " + str(heuristic_func(board, curr_player)))
+        return None, heuristic_func(board, curr_player)
 
+    # Initialize best move and best value
+    h_value = -math.inf
+    best_move = -math.inf
+
+    # Decrement depth limit
+    depth_limit -= 1
+
+    for moves in all_possible_moves:
+        next_board = play_move(board, curr_player, moves)
+        # If the current value is greater than the best value: optimal
+        _, value = alphabeta_min_limit(
+            next_board,
+            get_opponent(curr_player),
+            alpha,
+            beta,
+            heuristic_func,
+            depth_limit,
+        )
+        # Update maximum move
+        if value > h_value:
+            h_value = value
+            best_move = moves
+
+        # Update lower bound
+        if h_value > alpha:
+            alpha = h_value
+
+        # Prune if alpha beta bounds overlap
+        if alpha >= beta:
+            break
+    return best_move, h_value
+    """
     raise NotImplementedError
 
 
