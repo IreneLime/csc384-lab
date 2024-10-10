@@ -118,8 +118,43 @@ def alphabeta_max_limit(board, curr_player, alpha, beta, heuristic_func, depth_l
     :param depth_limit: the depth limit
     :return the best move and its estimated minimax value.
     """
+    # Obtain all possible moves, if terminal or depth_limit=0 then reurn None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if (not all_possible_moves) or (depth_limit <= 0):
+        # eprint("return value is " + str(heuristic_func(board, curr_player)))
+        return None, heuristic_func(board, curr_player)
 
-    raise NotImplementedError
+    # Initialize best move and best value
+    h_value = -math.inf
+    best_move = -math.inf
+
+    # Decrement depth limit
+    depth_limit -= 1
+
+    for moves in all_possible_moves:
+        next_board = play_move(board, curr_player, moves)
+        # If the current value is greater than the best value: optimal
+        _, value = alphabeta_min_limit(
+            next_board,
+            get_opponent(curr_player),
+            alpha,
+            beta,
+            heuristic_func,
+            depth_limit,
+        )
+        # Update maximum move
+        if value > h_value:
+            h_value = value
+            best_move = moves
+
+        # Update lower bound
+        if h_value > alpha:
+            alpha = h_value
+
+        # Prune if alpha beta bounds overlap
+        if alpha >= beta:
+            break
+    return best_move, h_value
 
 
 def alphabeta_min_limit(board, curr_player, alpha, beta, heuristic_func, depth_limit):
@@ -139,7 +174,42 @@ def alphabeta_min_limit(board, curr_player, alpha, beta, heuristic_func, depth_l
     :return the best move and its estimated minimax value.
     """
 
-    raise NotImplementedError
+    # Obtain all possible moves, if terminal or reached depth limit then return None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if (not all_possible_moves) or (depth_limit <= 0):
+        return None, heuristic_func(board, get_opponent(curr_player))
+
+    # Initialize best move and best value
+    h_value = math.inf
+    best_move = math.inf
+
+    depth_limit -= 1
+
+    for moves in all_possible_moves:
+        next_board = play_move(board, curr_player, moves)
+        # If the current value is greater than the best value: optimal
+        _, value = alphabeta_max_limit(
+            next_board,
+            get_opponent(curr_player),
+            alpha,
+            beta,
+            heuristic_func,
+            depth_limit,
+        )
+        # Update minimum move
+        if value < h_value:
+            h_value = value
+            best_move = moves
+
+        # Update upper bound
+        if h_value < beta:
+            beta = h_value
+
+        # Prune if alpha beta bounds overlap
+        if alpha >= beta:
+            break
+
+    return best_move, h_value
 
 
 def alphabeta_max_limit_opt(
