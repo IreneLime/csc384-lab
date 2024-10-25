@@ -1,2 +1,4 @@
 # Run board with minimax agents
-python mancala_cmdline.py --initialBoard test_board1.txt --agentTop agent_minimax.py --agentBottom agent_minimax.py
+python mancala_cmdline.py --initialBoard example_board.txt --agentTop minimax --agentBottom alphabeta -ht advanced -hb advanced
+
+python mancala_cmdline.py --initialBoard example_board.txt --agentTop minimax --agentBottom minimax -ht basic -o --limit 2
