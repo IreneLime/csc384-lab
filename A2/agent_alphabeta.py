@@ -273,6 +273,8 @@ def alphabeta_max_limit_opt(
     return best_move, h_value
 
 
+# larger ab range -> less pruning and more accurate
+# cache beta > = beta -> use
 def alphabeta_min_limit_opt(
     board, curr_player, alpha, beta, heuristic_func, depth_limit, optimizations
 ):
