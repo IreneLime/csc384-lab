@@ -233,7 +233,6 @@ def alphabeta_max_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its estimated minimax value.
     """
-    """
     # Obtain all possible moves, if terminal or depth_limit=0 then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
     if (not all_possible_moves) or (depth_limit <= 0):
@@ -250,13 +249,14 @@ def alphabeta_max_limit_opt(
     for moves in all_possible_moves:
         next_board = play_move(board, curr_player, moves)
         # If the current value is greater than the best value: optimal
-        _, value = alphabeta_min_limit(
+        _, value = alphabeta_min_limit_opt(
             next_board,
             get_opponent(curr_player),
             alpha,
             beta,
             heuristic_func,
             depth_limit,
+            optimizations,
         )
         # Update maximum move
         if value > h_value:
@@ -271,8 +271,6 @@ def alphabeta_max_limit_opt(
         if alpha >= beta:
             break
     return best_move, h_value
-    """
-    raise NotImplementedError
 
 
 def alphabeta_min_limit_opt(
@@ -297,7 +295,43 @@ def alphabeta_min_limit_opt(
     :return the best move and its estimated minimax value.
     """
 
-    raise NotImplementedError
+    # Obtain all possible moves, if terminal or reached depth limit then return None
+    all_possible_moves = board.get_possible_moves(curr_player)
+    if (not all_possible_moves) or (depth_limit <= 0):
+        return None, heuristic_func(board, get_opponent(curr_player))
+
+    # Initialize best move and best value
+    h_value = math.inf
+    best_move = math.inf
+
+    depth_limit -= 1
+
+    for moves in all_possible_moves:
+        next_board = play_move(board, curr_player, moves)
+        # If the current value is greater than the best value: optimal
+        _, value = alphabeta_max_limit_opt(
+            next_board,
+            get_opponent(curr_player),
+            alpha,
+            beta,
+            heuristic_func,
+            depth_limit,
+            optimizations,
+        )
+        # Update minimum move
+        if value < h_value:
+            h_value = value
+            best_move = moves
+
+        # Update upper bound
+        if h_value < beta:
+            beta = h_value
+
+        # Prune if alpha beta bounds overlap
+        if alpha >= beta:
+            break
+
+    return best_move, h_value
 
 
 ###############################################################################
