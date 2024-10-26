@@ -27,7 +27,8 @@ def alphabeta_max_basic(board, curr_player, alpha, beta, heuristic_func):
     """
     # Obtain all possible moves, if terminal then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if not all_possible_moves:
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (not opponent_possible_moves):
         # eprint("return value is " + str(heuristic_func(board, curr_player)))
         return None, heuristic_func(board, curr_player)
 
@@ -73,7 +74,8 @@ def alphabeta_min_basic(board, curr_player, alpha, beta, heuristic_func):
     """
     # Obtain all possible moves, if terminal then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if not all_possible_moves:
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (not opponent_possible_moves):
         return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
@@ -120,8 +122,8 @@ def alphabeta_max_limit(board, curr_player, alpha, beta, heuristic_func, depth_l
     """
     # Obtain all possible moves, if terminal or depth_limit=0 then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
-        # eprint("return value is " + str(heuristic_func(board, curr_player)))
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
         return None, heuristic_func(board, curr_player)
 
     # Initialize best move and best value
@@ -176,7 +178,8 @@ def alphabeta_min_limit(board, curr_player, alpha, beta, heuristic_func, depth_l
 
     # Obtain all possible moves, if terminal or reached depth limit then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
         return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
@@ -233,11 +236,19 @@ def alphabeta_max_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its estimated minimax value.
     """
+    cache = optimizations.get("cache", {})
+    board_state = (curr_player, hash(board))
+    if board_state in cache:
+        c_move, c_value, c_depth, c_alpha, c_beta = cache[board_state]
+        if (c_depth > depth_limit) or (c_beta >= beta) or (c_alpha <= alpha):
+            return c_move, c_value
     # Obtain all possible moves, if terminal or depth_limit=0 then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
-        # eprint("return value is " + str(heuristic_func(board, curr_player)))
-        return None, heuristic_func(board, curr_player)
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
+        h = heuristic_func(board, curr_player)
+        cache[board_state] = (None, h, depth_limit, alpha, beta)
+        return None, h
 
     # Initialize best move and best value
     h_value = -math.inf
@@ -270,16 +281,15 @@ def alphabeta_max_limit_opt(
         # Prune if alpha beta bounds overlap
         if alpha >= beta:
             break
+
+    cache[board_state] = (best_move, h_value, depth_limit, alpha, beta)
     return best_move, h_value
 
 
 def alphabeta_min_limit_opt(
     board, curr_player, alpha, beta, heuristic_func, depth_limit, optimizations
 ):
-    """
-    Perform Alpha-Beta Pruning for MIN player
-    up to the given depth limit and with additional optimizations.
-    Return the best move and the estimated minimax value.
+    """ "
 
     If the board is a terminal state,
     return None as the best move and the heuristic value of the board as the best value.
@@ -294,11 +304,20 @@ def alphabeta_min_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its estimated minimax value.
     """
+    cache = optimizations.get("cache", {})
+    board_state = (curr_player, hash(board))
+    if board_state in cache:
+        c_move, c_value, c_depth, c_alpha, c_beta = cache[board_state]
+        if (c_depth > depth_limit) or (c_beta >= beta) or (c_alpha <= alpha):
+            return c_move, c_value
 
-    # Obtain all possible moves, if terminal or reached depth limit then return None
+    # # Obtain all possible moves, if terminal or reached depth limit then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
-        return None, heuristic_func(board, get_opponent(curr_player))
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
+        h = heuristic_func(board, get_opponent(curr_player))
+        cache[board_state] = (None, h, depth_limit, alpha, beta)
+        return None, h
 
     # Initialize best move and best value
     h_value = math.inf
@@ -331,6 +350,7 @@ def alphabeta_min_limit_opt(
         if alpha >= beta:
             break
 
+    cache[board_state] = (best_move, h_value, depth_limit, alpha, beta)
     return best_move, h_value
 
 

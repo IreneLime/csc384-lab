@@ -77,4 +77,3 @@ def heuristic_advanced(board, player):
             total_score -= board.pockets[player][i]
 
     return total_score
-    raise NotImplementedError

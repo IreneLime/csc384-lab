@@ -25,7 +25,8 @@ def minimax_max_basic(board, curr_player, heuristic_func):
     """
     # Obtain all possible moves, if terminal then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if not all_possible_moves:
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (not opponent_possible_moves):
         return None, heuristic_func(board, curr_player)
 
     # Initialize best move and best value
@@ -61,7 +62,8 @@ def minimax_min_basic(board, curr_player, heuristic_func):
     """
     # Obtain all possible moves, if terminal then reurn None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if not all_possible_moves:
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (not opponent_possible_moves):
         return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
@@ -98,7 +100,8 @@ def minimax_max_limit(board, curr_player, heuristic_func, depth_limit):
     # Obtain all possible moves, if terminal or if it hits the depth limit
     # then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
         return None, heuristic_func(board, curr_player)
 
     # Initialize best move and best value
@@ -136,7 +139,8 @@ def minimax_min_limit(board, curr_player, heuristic_func, depth_limit):
     """
     # Obtain all possible moves, if terminal or depth_limit=0 then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
         return None, heuristic_func(board, get_opponent(curr_player))
 
     # Initialize best move and best value
@@ -174,19 +178,19 @@ def minimax_max_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its minimmax value estimated by our heuristic function.
     """
+    cache = optimizations.get("cache", {})
+    board_state = (curr_player, hash(board))
 
-    board_state = (board.__hash__(), curr_player)
-
-    if board_state in optimizations["cache"].keys():
-        c_move, c_value, c_depth = optimizations["cache"][board_state]
+    if board_state in cache:
+        c_move, c_value, c_depth = cache[board_state]
         if c_depth > depth_limit:
             return c_move, c_value
-    # Obtain all possible moves, if terminal or if it hits the depth limit
-    # then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
-        # optimizations["cache"][board_state] = (None, heuristic_func(board, curr_player))
-        return None, heuristic_func(board, curr_player)
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
+        h = heuristic_func(board, curr_player)
+        cache[board_state] = (None, h, depth_limit)
+        return None, h
 
     # Initialize best move and best value
     h_value = -math.inf
@@ -208,8 +212,7 @@ def minimax_max_limit_opt(
         if value > h_value:
             h_value = value
             best_move = move
-
-    optimizations["cache"][board_state] = (best_move, h_value, depth_limit)
+    cache[board_state] = (best_move, h_value, depth_limit)
     return best_move, h_value
 
 
@@ -229,23 +232,22 @@ def minimax_min_limit_opt(
         You can use a dictionary called "cache" to implement caching.
     :return the best move and its minimmax value estimated by our heuristic function.
     """
+    cache = optimizations.get("cache", {})
 
-    board_state = (board.__hash__(), curr_player)
+    board_state = (curr_player, hash(board))
 
-    if board_state in optimizations["cache"].keys():
-
-        c_move, c_value, c_depth = optimizations["cache"][board_state]
+    if board_state in cache:
+        c_move, c_value, c_depth = cache[board_state]
         if c_depth > depth_limit:
             return c_move, c_value
-
-    # Obtain all possible moves, if terminal or depth_limit=0 then return None
+    # Obtain all possible moves, if terminal or if it hits the depth limit
+    # then return None
     all_possible_moves = board.get_possible_moves(curr_player)
-    if (not all_possible_moves) or (depth_limit <= 0):
-        # optimizations["cache"][board_state] = (
-        #     None,
-        #     heuristic_func(board, get_opponent(curr_player)),
-        # )
-        return None, heuristic_func(board, get_opponent(curr_player))
+    opponent_possible_moves = board.get_possible_moves(get_opponent(curr_player))
+    if (not all_possible_moves) or (depth_limit == 0) or (not opponent_possible_moves):
+        h = heuristic_func(board, get_opponent(curr_player))
+        cache[board_state] = (None, h, depth_limit)
+        return None, h
 
     # Initialize best move and best value
     h_value = math.inf
@@ -267,7 +269,7 @@ def minimax_min_limit_opt(
         if value < h_value:
             h_value = value
             best_move = move
-    optimizations["cache"][board_state] = (best_move, h_value, depth_limit)
+    cache[board_state] = (best_move, h_value, depth_limit)
     return best_move, h_value
 
 
