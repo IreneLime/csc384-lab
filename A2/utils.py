@@ -65,15 +65,83 @@ def heuristic_advanced(board, player):
     """
     total_score = 0
     opponent = get_opponent(player)
+    sum_player_pocket = sum(board.pockets[player])
+    sum_opponent_pocket = sum(board.pockets[opponent])
+
+    # Difference in store count
     diff_store = board.mancalas[player] - board.mancalas[opponent]
-    total_score += diff_store
-    # If the current player has empty pockets
-    for i, value in enumerate(board.pockets[player]):
-        if value == 0:
-            total_score += board.pockets[opponent][i]
-    # If the opponent player has empty pockets
-    for i, value in enumerate(board.pockets[opponent]):
-        if value == 0:
-            total_score -= board.pockets[player][i]
+    total_store = board.mancalas[player] + board.mancalas[opponent]
+    diff_stone = sum_player_pocket - sum_opponent_pocket
+    # total_score += diff_store
+
+    pocket_num = len(board.pockets[player])
+    captures = 0
+    player_empty = 0
+    max_captures = 0
+    capture_num = 0
+    curr_capture = 0
+    opponent_capture = 0
+    opponent_empty = 0
+    # for i, stones in enumerate(board.pockets[player]):
+    #     if stones == 0:
+    #         curr_capture += board.pockets[opponent][pocket_num - i - 1]
+    #         count = 0
+    #         while count != i:
+    #             if board.pockets[player][count] == (i - count):
+    #                 if board.pockets[opponent][pocket_num - i - 1] > max_captures:
+    #                     max_captures = board.pockets[opponent][pocket_num - i - 1]
+    #                     # opponent_empty += 1
+    #                 captures += board.pockets[opponent][pocket_num - i - 1]
+    #                 capture_num += 1
+
+    #             count += 1
+    #         player_empty += 1
+    for i, stones in enumerate(board.pockets[player]):
+        if stones == 0:
+            curr_capture += board.pockets[opponent][pocket_num - i - 1]
+        if board.pockets[opponent][pocket_num - i - 1] == 0:
+            opponent_capture += stones
+    player_empty += sum(1 for stones in board.pockets[player] if stones == 0)
+    opponent_empty += sum(1 for stones in board.pockets[opponent] if stones == 0)
+    # total_score += max_captures
+
+    total_stones = (
+        board.mancalas[player]
+        + board.mancalas[opponent]
+        + sum_player_pocket
+        + sum_opponent_pocket
+    )
+    total_score = diff_store * 2 + diff_stone
+    # Define game states
+    # Start
+    # Empty opponent, focus on capture
+    if total_store < (total_stones / 4):
+        total_score += opponent_empty * 2 + curr_capture * 2
+        total_score -= player_empty * 2
+        total_score -= opponent_capture
+        total_score -= board.pockets[player][pocket_num - 1] * 2
+    # End
+    # Empty opponent, focus on capture
+    # Prevent opponent from capture
+    elif total_store > (3 * total_stones / 4):
+        total_score += opponent_empty * 5 + curr_capture * 2
+        total_score -= player_empty
+        total_score -= opponent_capture * 2
+        total_score += board.pockets[player][pocket_num - 1]
+    # Middle
+    else:
+        total_score += opponent_empty * 3 + curr_capture * 1.5
+        total_score -= player_empty * 1.5
+        total_score -= opponent_capture * 1.5
+        total_score += board.pockets[player][pocket_num - 1] * 1.5
+
+    # total_score = (
+    #     diff_store
+    #     + 0.3 * diff_stone
+    #     + curr_capture
+    #     + 0.5 * captures
+    #     - 0.3 * player_empty
+    #     + 0.2 * opponent_empty
+    # )
 
     return total_score
