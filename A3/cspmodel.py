@@ -7,6 +7,7 @@
 from board import *
 from cspbase import *
 
+
 def kropki_model(board):
     """
     Create a CSP for a Kropki Sudoku Puzzle given a board of dimension.
@@ -21,12 +22,12 @@ def kropki_model(board):
     Remember that a Kropki sudoku has the following constraints.
     - Row constraint: every two cells in a row must have different values.
     - Column constraint: every two cells in a column must have different values.
-    - Cage constraint: every two cells in a 2x3 cage (for 6x6 puzzle) 
+    - Cage constraint: every two cells in a 2x3 cage (for 6x6 puzzle)
             or 3x3 cage (for 9x9 puzzle) must have different values.
     - Black dot constraints: one value is twice the other value.
     - White dot constraints: the two values are consecutive (differ by 1).
 
-    Make sure that you return a 2D list of variables separately. 
+    Make sure that you return a 2D list of variables separately.
     Once the CSP is solved, we will use this list of variables to populate the solved board.
     Take a look at csprun.py for the expected format of this 2D list.
 
@@ -50,10 +51,18 @@ def create_variables(dim, board):
     :returns: A list of variables with an initial domain, one for each cell on the board
     :rtype: List[Variables]
     """
+    var_list = []
+
+    for r in range(len(board.cells)):
+        for c in range(len(board.cells[r])):
+            name = f"Var({str(r)},{str(c)})"
+            var_list.append(Variable(name, list(range(1, dim + 1))))
+
+    return var_list
 
     raise NotImplementedError
 
-    
+
 def satisfying_tuples_difference_constraints(dim):
     """
     Return a list of satifying tuples for binary difference constraints.
@@ -64,6 +73,7 @@ def satisfying_tuples_difference_constraints(dim):
     :returns: A list of satifying tuples
     :rtype: List[(int,int)]
     """
+    return [(r, c) for r in range(1, dim + 1) for c in range(1, dim + 1) if r != c]
 
     raise NotImplementedError
 
@@ -78,6 +88,9 @@ def satisfying_tuples_white_dots(dim):
     :returns: A list of satifying tuples
     :rtype: List[(int,int)]
     """
+    return [
+        (r, c) for r in range(1, dim + 1) for c in range(1, dim + 1) if abs(r - c) == 1
+    ]
 
     raise NotImplementedError
 
@@ -92,6 +105,12 @@ def satisfying_tuples_black_dots(dim):
     :returns: A list of satifying tuples
     :rtype: List[(int,int)]
     """
+    return [
+        (r, c)
+        for r in range(1, dim + 1)
+        for c in range(1, dim + 1)
+        if r == c * 2 or c == r * 2
+    ]
 
     raise NotImplementedError
 
@@ -103,17 +122,17 @@ def create_row_and_col_constraints(dim, sat_tuples, variables):
     :param dim: Size of the board
     :type dim: int
 
-    :param sat_tuples: A list of domain value pairs (value1, value2) such that 
+    :param sat_tuples: A list of domain value pairs (value1, value2) such that
         the two values in each tuple are different.
     :type sat_tuples: List[(int, int)]
 
     :param variables: A list of all the variables in the CSP
     :type variables: List[Variable]
-        
+
     :returns: A list of binary all-different constraints
     :rtype: List[Constraint]
     """
-   
+
     raise NotImplementedError
 
 
@@ -124,40 +143,41 @@ def create_cage_constraints(dim, sat_tuples, variables):
     :param dim: Size of the board
     :type dim: int
 
-    :param sat_tuples: A list of domain value pairs (value1, value2) such that 
+    :param sat_tuples: A list of domain value pairs (value1, value2) such that
         the two values in each tuple are different.
     :type sat_tuples: List[(int, int)]
 
     :param variables: A list of all the variables in the CSP
     :type variables: List[Variable]
-        
+
     :returns: A list of binary all-different constraints
     :rtype: List[Constraint]
     """
 
     raise NotImplementedError
-    
+
+
 def create_dot_constraints(dim, dots, white_tuples, black_tuples, variables):
     """
     Create and return a list of binary constraints, one for each dot.
 
     :param dim: Size of the board
     :type dim: int
-    
+
     :param dots: A list of dots, each dot is a Dot object.
     :type dots: List[Dot]
 
-    :param white_tuples: A list of domain value pairs (value1, value2) such that 
+    :param white_tuples: A list of domain value pairs (value1, value2) such that
         the two values in each tuple satisfy the white dot constraint.
     :type white_tuples: List[(int, int)]
-    
-    :param black_tuples: A list of domain value pairs (value1, value2) such that 
+
+    :param black_tuples: A list of domain value pairs (value1, value2) such that
         the two values in each tuple satisfy the black dot constraint.
     :type black_tuples: List[(int, int)]
 
     :param variables: A list of all the variables in the CSP
     :type variables: List[Variable]
-        
+
     :returns: A list of binary dot constraints
     :rtype: List[Constraint]
     """
@@ -175,6 +195,12 @@ def satisfying_tuples_no_dots(dim):
     :returns: A list of satifying tuples
     :rtype: List[(int,int)]
     """
+    return [
+        (r, c)
+        for r in range(1, dim + 1)
+        for c in range(1, dim + 1)
+        if (r != c * 2 and c != r * 2) and (abs(r - c) != 1) and (r != c)
+    ]
 
     raise NotImplementedError
 
@@ -185,20 +211,19 @@ def create_no_dot_constraints(dim, dots, no_dot_tuples, variables):
 
     :param dim: Size of the board
     :type dim: int
-    
+
     :param dots: A list of dots, each dot is a Dot object.
     :type dots: List[Dot]
- 
-    :param no_dot_tuples: A list of domain value pairs (value1, value2) such that 
+
+    :param no_dot_tuples: A list of domain value pairs (value1, value2) such that
         the two values in each tuple satisfy the no dot constraint.
     :type no_dot_tuples: List[(int, int)]
 
     :param variables: A list of all the variables in the CSP
     :type variables: List[Variable]
-        
+
     :returns: A list of binary no dot constraints
     :rtype: List[Constraint]
     """
 
     raise NotImplementedError
-
