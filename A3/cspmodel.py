@@ -35,7 +35,19 @@ def kropki_model(board):
     :rtype: CSP, List[List[Variable]]
 
     """
+    var_list = create_variables(board.dimension, board)
+    # [var.dom for var in var_list]
+    obj = CSP("name", var_list)
 
+    bin_diff_cons = satisfying_tuples_difference_constraints(board.dimension)
+    white_dot_cons = satisfying_tuples_white_dots(board.dimension)
+    black_dot_cons = satisfying_tuples_black_dots(board.dimension)
+    no_dot_cons = satisfying_tuples_no_dots(board.dimension)
+    r_c_const = create_row_and_col_constraints(board.dimension, bin_diff_cons, var_list)
+    for c in r_c_const:
+        obj.add_constraint(c)
+
+    return obj
     raise NotImplementedError
 
 
@@ -132,6 +144,33 @@ def create_row_and_col_constraints(dim, sat_tuples, variables):
     :returns: A list of binary all-different constraints
     :rtype: List[Constraint]
     """
+    c_list = []
+    # Find row constraints
+    for r in range(dim):
+        # Scan through each column and the remainig variables within the column
+        for c in range(dim):
+            for c_remain in range(c + 1, dim):
+                curr_var = variables[r * dim + c]
+                constrain_var = variables[r * dim + c_remain]
+                # Add a new constraint variable for the pair of variables
+                name = f"row_{curr_var.name}_{constrain_var.name}"
+                const = Constraint(name, [curr_var, constrain_var])
+                # Add tuples satisifying tuples to the constaint
+                const.add_satisfying_tuples(sat_tuples)
+                c_list.append(const)
+
+    # Find column constraints
+    for c in range(dim):
+        for r in range(dim):
+            for r_remain in range(r + 1, dim):
+                curr_var = variables[r * dim + c]
+                constrain_var = variables[r_remain * dim + c]
+                name = f"row_{curr_var.name}_{constrain_var.name}"
+                const = Constraint(name, [curr_var, constrain_var])
+                const.add_satisfying_tuples(sat_tuples)
+                c_list.append(const)
+
+    return c_list
 
     raise NotImplementedError
 
@@ -153,6 +192,9 @@ def create_cage_constraints(dim, sat_tuples, variables):
     :returns: A list of binary all-different constraints
     :rtype: List[Constraint]
     """
+    constraint = []
+
+    return constraint
 
     raise NotImplementedError
 
@@ -181,6 +223,9 @@ def create_dot_constraints(dim, dots, white_tuples, black_tuples, variables):
     :returns: A list of binary dot constraints
     :rtype: List[Constraint]
     """
+    constraint = []
+
+    return constraint
 
     raise NotImplementedError
 
@@ -225,5 +270,11 @@ def create_no_dot_constraints(dim, dots, no_dot_tuples, variables):
     :returns: A list of binary no dot constraints
     :rtype: List[Constraint]
     """
+    constraint = []
+    for d in dots:
+        satifsy_constraint = satisfying_tuples_no_dots(dim)
+        constraint.append(satifsy_constraint)
+
+    return constraint
 
     raise NotImplementedError
