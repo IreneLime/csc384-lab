@@ -44,7 +44,10 @@ def kropki_model(board):
     black_dot_cons = satisfying_tuples_black_dots(board.dimension)
     no_dot_cons = satisfying_tuples_no_dots(board.dimension)
     r_c_const = create_row_and_col_constraints(board.dimension, bin_diff_cons, var_list)
+    cage_const = create_cage_constraints(board.dimension, bin_diff_cons, var_list)
     for c in r_c_const:
+        obj.add_constraint(c)
+    for c in cage_const:
         obj.add_constraint(c)
 
     return obj
@@ -192,9 +195,48 @@ def create_cage_constraints(dim, sat_tuples, variables):
     :returns: A list of binary all-different constraints
     :rtype: List[Constraint]
     """
-    constraint = []
+    c_list = []
+    row_num = 3
+    size = 0
+    col_num = 0
+    # Differentiate by board size
+    if dim == 6:
+        col_num = 2
+        size = 6
+    else:
+        col_num = 3
+        size = 9
 
-    return constraint
+    row_incre_count = 0
+    col_incre_count = 0
+    # Generate a list of coordinates
+    for i in range(size):
+        coord = []
+
+        # Put all row and col variables within the current cage in a list
+        for r in range(row_num):
+            for c in range(col_num):
+                coord.append(
+                    variables[
+                        (r + row_num * row_incre_count) * dim
+                        + (c + col_incre_count * col_num)
+                    ]
+                )
+
+        # Loop through each variable in the cage and its subsequent variables
+        for num, j in enumerate(coord):
+            for k in coord[num + 1 :]:
+                name = f"cage_{i}_{j.name}_{k.name}"
+                const = Constraint(name, [j, k])
+                const.add_satisfying_tuples(sat_tuples)
+                c_list.append(const)
+
+        # Change cage location
+        col_incre_count += 1
+        if col_incre_count == 3:
+            col_incre_count = 0
+            row_incre_count += 1
+    return c_list
 
     raise NotImplementedError
 
