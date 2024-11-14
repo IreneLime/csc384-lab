@@ -45,10 +45,10 @@ def kropki_model(board):
     r_c_const = create_row_and_col_constraints(board.dimension, bin_diff_cons, var_list)
     cage_const = create_cage_constraints(board.dimension, bin_diff_cons, var_list)
     dot_const = create_dot_constraints(
-        board.dimensions, board.dots, white_dot_cons, black_dot_cons, var_list
+        board.dimension, board.dots, white_dot_cons, black_dot_cons, var_list
     )
     no_dot_const = create_no_dot_constraints(
-        board.dimensions, board.dots, no_dot_cons, var_list
+        board.dimension, board.dots, no_dot_cons, var_list
     )
     for c in r_c_const:
         obj.add_constraint(c)
@@ -58,6 +58,7 @@ def kropki_model(board):
         obj.add_constraint(c)
     for c in no_dot_const:
         obj.add_constraint(c)
+    # print(obj.cons)
 
     return obj
 
@@ -276,8 +277,6 @@ def create_dot_constraints(dim, dots, white_tuples, black_tuples, variables):
         c_list.append(const)
 
     return c_list
-
-    raise NotImplementedError
 
 
 def satisfying_tuples_no_dots(dim):
