@@ -36,7 +36,6 @@ def kropki_model(board):
 
     """
     var_list = create_variables(board.dimension, board)
-    # [var.dom for var in var_list]
     obj = CSP("name", var_list)
 
     bin_diff_cons = satisfying_tuples_difference_constraints(board.dimension)
@@ -45,13 +44,22 @@ def kropki_model(board):
     no_dot_cons = satisfying_tuples_no_dots(board.dimension)
     r_c_const = create_row_and_col_constraints(board.dimension, bin_diff_cons, var_list)
     cage_const = create_cage_constraints(board.dimension, bin_diff_cons, var_list)
+    dot_const = create_dot_constraints(
+        board.dimensions, board.dots, white_dot_cons, black_dot_cons, var_list
+    )
+    no_dot_const = create_no_dot_constraints(
+        board.dimensions, board.dots, no_dot_cons, var_list
+    )
     for c in r_c_const:
         obj.add_constraint(c)
     for c in cage_const:
         obj.add_constraint(c)
+    for c in dot_const:
+        obj.add_constraint(c)
+    for c in no_dot_const:
+        obj.add_constraint(c)
 
     return obj
-    raise NotImplementedError
 
 
 def create_variables(dim, board):
@@ -75,8 +83,6 @@ def create_variables(dim, board):
 
     return var_list
 
-    raise NotImplementedError
-
 
 def satisfying_tuples_difference_constraints(dim):
     """
@@ -89,8 +95,6 @@ def satisfying_tuples_difference_constraints(dim):
     :rtype: List[(int,int)]
     """
     return [(r, c) for r in range(1, dim + 1) for c in range(1, dim + 1) if r != c]
-
-    raise NotImplementedError
 
 
 def satisfying_tuples_white_dots(dim):
@@ -106,8 +110,6 @@ def satisfying_tuples_white_dots(dim):
     return [
         (r, c) for r in range(1, dim + 1) for c in range(1, dim + 1) if abs(r - c) == 1
     ]
-
-    raise NotImplementedError
 
 
 def satisfying_tuples_black_dots(dim):
@@ -126,8 +128,6 @@ def satisfying_tuples_black_dots(dim):
         for c in range(1, dim + 1)
         if r == c * 2 or c == r * 2
     ]
-
-    raise NotImplementedError
 
 
 def create_row_and_col_constraints(dim, sat_tuples, variables):
@@ -174,8 +174,6 @@ def create_row_and_col_constraints(dim, sat_tuples, variables):
                 c_list.append(const)
 
     return c_list
-
-    raise NotImplementedError
 
 
 def create_cage_constraints(dim, sat_tuples, variables):
@@ -238,8 +236,6 @@ def create_cage_constraints(dim, sat_tuples, variables):
             row_incre_count += 1
     return c_list
 
-    raise NotImplementedError
-
 
 def create_dot_constraints(dim, dots, white_tuples, black_tuples, variables):
     """
@@ -265,9 +261,21 @@ def create_dot_constraints(dim, dots, white_tuples, black_tuples, variables):
     :returns: A list of binary dot constraints
     :rtype: List[Constraint]
     """
-    constraint = []
+    c_list = []
+    for d in dots:
+        curr_var = variables[d.cell_row * dim + d.cell_col]
+        constrain_var = variables[d.cell2_row * dim + d.cell2_col]
 
-    return constraint
+        name = f"{d.color}_dot_{curr_var.name}_{constrain_var.name}"
+        const = Constraint(name, [curr_var, constrain_var])
+        if d.color == CHAR_BLACK:
+            const.add_satisfying_tuples(black_tuples)
+        else:
+            const.add_satisfying_tuples(white_tuples)
+
+        c_list.append(const)
+
+    return c_list
 
     raise NotImplementedError
 
@@ -288,8 +296,6 @@ def satisfying_tuples_no_dots(dim):
         for c in range(1, dim + 1)
         if (r != c * 2 and c != r * 2) and (abs(r - c) != 1) and (r != c)
     ]
-
-    raise NotImplementedError
 
 
 def create_no_dot_constraints(dim, dots, no_dot_tuples, variables):
@@ -312,11 +318,12 @@ def create_no_dot_constraints(dim, dots, no_dot_tuples, variables):
     :returns: A list of binary no dot constraints
     :rtype: List[Constraint]
     """
-    constraint = []
+    c_list = []
     for d in dots:
-        satifsy_constraint = satisfying_tuples_no_dots(dim)
-        constraint.append(satifsy_constraint)
-
-    return constraint
-
-    raise NotImplementedError
+        curr_var = variables[d.cell_row * dim + d.cell_col]
+        constrain_var = variables[d.cell2_row * dim + d.cell2_col]
+        name = f"no_dot_{curr_var.name}_{constrain_var.name}"
+        const = Constraint(name, [curr_var, constrain_var])
+        const.add_satisfying_tuples(no_dot_tuples)
+        c_list.append(const)
+    return c_list
