@@ -1,7 +1,10 @@
 ############################################################
 ## CSC 384, Intro to AI, University of Toronto.
 ## Assignment 3 Starter Code
-## v1.0
+## v1.1
+## Changes:
+##  - Added the create_list_of_variables function
+##  - Modified the main function appropriately.
 ############################################################
 
 import argparse
@@ -10,6 +13,7 @@ from board import *
 from cspmodel import *
 from propagators import *
 from cspbase import *
+
 
 def read_from_file(filename):
     """
@@ -55,6 +59,20 @@ def read_from_file(filename):
                 board.dots.append(dot)
 
     return board
+
+
+def create_list_of_variables(csp: CSP, board: Board):
+    """
+    Create and return a list of variables using the csp and board
+    """
+    variables = csp.get_all_vars()
+    var_list = []
+    for i in range(board.dimension):
+        row = []
+        for j in range(board.dimension):
+            row.append(variables[i * board.dimension + j])
+        var_list.append(row)
+    return var_list
 
 
 if __name__ == "__main__":
@@ -108,16 +126,7 @@ if __name__ == "__main__":
     print("The initial board is below.\n{}".format(board))
 
     csp = kropki_model(board)
-
-    # Create a list of variables
-    variables = csp.get_all_vars()
-    var_list = []
-    for i in range(board.dimension):
-        row = []
-        for j in range(board.dimension):
-            row.append(variables[i * board.dimension + j])
-        var_list.append(row)
-    
+  
     solver = BT(csp)
 
     if args.heuristic:
@@ -126,6 +135,9 @@ if __name__ == "__main__":
     else:
         print("NOT using the MRV heuristic")
         solver.bt_search(prop)
+
+    # create a list of variables
+    var_list = create_list_of_variables(csp, board)
 
     # fill the board with the variables' assigned values.
     for row in range(board.dimension):
@@ -141,3 +153,5 @@ if __name__ == "__main__":
     print(board.dimension, file=outputfile)
     print(board, file=outputfile)
     outputfile.close()
+
+
