@@ -267,11 +267,13 @@ def create_dot_constraints(dim, dots, white_tuples, black_tuples, variables):
         curr_var = variables[d.cell_row * dim + d.cell_col]
         constrain_var = variables[d.cell2_row * dim + d.cell2_col]
 
-        name = f"{d.color}_dot_{curr_var.name}_{constrain_var.name}"
-        const = Constraint(name, [curr_var, constrain_var])
         if d.color == CHAR_BLACK:
+            name = f"BLACKDOT_{curr_var.name}_{constrain_var.name}"
+            const = Constraint(name, [curr_var, constrain_var])
             const.add_satisfying_tuples(black_tuples)
         else:
+            name = f"WHITEDOT_{curr_var.name}_{constrain_var.name}"
+            const = Constraint(name, [curr_var, constrain_var])
             const.add_satisfying_tuples(white_tuples)
 
         c_list.append(const)
@@ -319,10 +321,11 @@ def create_no_dot_constraints(dim, dots, no_dot_tuples, variables):
     """
     c_list = []
     for d in dots:
-        curr_var = variables[d.cell_row * dim + d.cell_col]
-        constrain_var = variables[d.cell2_row * dim + d.cell2_col]
-        name = f"no_dot_{curr_var.name}_{constrain_var.name}"
-        const = Constraint(name, [curr_var, constrain_var])
-        const.add_satisfying_tuples(no_dot_tuples)
-        c_list.append(const)
+        if d.color == CHAR_EMPTY:
+            curr_var = variables[d.cell_row * dim + d.cell_col]
+            constrain_var = variables[d.cell2_row * dim + d.cell2_col]
+            name = f"NODOT_{curr_var.name}_{constrain_var.name}"
+            const = Constraint(name, [curr_var, constrain_var])
+            const.add_satisfying_tuples(no_dot_tuples)
+            c_list.append(const)
     return c_list
