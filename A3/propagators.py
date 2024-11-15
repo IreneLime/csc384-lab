@@ -5,7 +5,7 @@
 ##
 ############################################################
 
-from itertools import permutations
+from collections import deque
 
 
 def prop_FC(csp, last_assigned_var=None):
@@ -97,8 +97,45 @@ def prop_AC3(csp, last_assigned_var=None):
         all the constraints and a list of variable and value pairs pruned.
     :rtype: boolean, List[(Variable, Value)]
     """
+    prune_list = []
+    cons_list = deque()
+    # Check all constraints if the last assigned variable is None
+    if last_assigned_var == None:
+        for v in csp.get_all_vars():
+            for c in csp.get_cons_with_var(v):
+                cons_list.append((v, c))
+    else:
+        for c in csp.get_cons_with_var(last_assigned_var):
+            cons_list.append((v, c) for v in c.get_scope())
 
-    raise NotImplementedError
+    while cons_list:
+        print(cons_list)
+        c_v, c = cons_list.popleft()
+        # Get all variables in the constraint
+        vars = c.get_scope()
+        for var in vars:
+            if var == c_v:
+                continue
+            # Check all values in the variable's domain
+            for v in c_v.cur_domain():
+                c_v.assign(v)
+                test_val = []
+                for test_var in vars:
+                    test_val.append(test_var.get_assigned_value())
+                if not c.check(test_val):
+                    c_v.prune_value(v)
+                    prune_list.append((c_v, v))
+
+                    # If pruned any value, add constraint associated with the variable back
+                    for constraint in csp.get_cons_with_var(c_v):
+                        if (c_v, constraint) in cons_list:
+                            continue
+                        cons_list.append((c_v, constraint))
+                c_v.unassign()
+        for var in csp.get_all_vars():
+            if var.cur_domain_size() == 0:
+                return False, prune_list
+    return True, prune_list
 
 
 def ord_mrv(csp):
