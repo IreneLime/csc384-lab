@@ -5,6 +5,8 @@
 ##
 ############################################################
 
+from itertools import permutations
+
 
 def prop_FC(csp, last_assigned_var=None):
     """
@@ -41,46 +43,27 @@ def prop_FC(csp, last_assigned_var=None):
         cons_list = csp.get_all_cons()
     else:
         cons_list = csp.get_cons_with_var(last_assigned_var)
+    # csp.print_all()
 
     # Check all the constraints that contain the last assigned variable.
     for c in cons_list:
+        # Focus on the constraints with one unassigned variable
         if c.get_num_unassigned_vars() == 1:
-            # Get the unassigned variable
-            print(c.get_scope())
-            var = c.get_scope()[0]
+            # Get the variable
+            var = c.get_unassigned_vars()[0]
 
-            # # Collect the values from the unassigned_var's current domain
-            # values_to_prune = []
-            # for value in unassigned_var.cur_domain():
-            #     # Check if there's an assignment for all variables in the scope satisfying the constraint
-            #     assigned_values = [var.get_assigned_value() if var.is_assigned() else value
-            #                        for var in con.get_scope()]
-            #     if not con.check(assigned_values):
-            #         values_to_prune.append(value)
+            # Loop through all available values
+            for v in var.cur_domain():
+                var.assign(v)
+                test_val = []
+                # Check all assigned values if they satisify the constraint
+                for test_var in c.get_scope():
+                    test_val.append(test_var.get_assigned_value())
+                if not c.check(test_val):
+                    var.prune_value(v)
+                    prune_list.append((var, v))
+                var.unassign()
 
-            # # Prune values and add them to prunings list
-            # for value in values_to_prune:
-            #     unassigned_var.prune_value(value)
-            #     prunings.append((unassigned_var, value))
-
-            # for val in var.cur_domain():
-            #     assigned_val = []
-            #     if var.is_assigned():
-            #         assigned_val = var.get_assigned_value()
-            #     else:
-            #         for v in c.get_scope():
-            #             assigned_val.append(v)
-            #     if not c.check(assigned_val):
-            #         var.prune_value(val)
-            #         prune_list.append((var, val))
-
-            # Prune the value that violates the constraint
-            if not c.check(var.cur_domain()):
-                for val in var.cur_domain():
-                    print(val)
-
-                    var.prune_value(val)
-                    prune_list.append((var, val))
             if var.cur_domain_size() == 0:
                 return False, prune_list
 
