@@ -105,36 +105,61 @@ def prop_AC3(csp, last_assigned_var=None):
             for c in csp.get_cons_with_var(v):
                 cons_list.append((v, c))
     else:
+        # Only check constraints of the last variable
         for c in csp.get_cons_with_var(last_assigned_var):
-            cons_list.append((v, c) for v in c.get_scope())
+            cons_list.append((last_assigned_var, c))
 
+    # Loop through the constraint queue
     while cons_list:
-        print(cons_list)
         c_v, c = cons_list.popleft()
+
         # Get all variables in the constraint
         vars = c.get_scope()
         for var in vars:
-            if var == c_v:
-                continue
-            # Check all values in the variable's domain
-            for v in c_v.cur_domain():
-                c_v.assign(v)
-                test_val = []
-                for test_var in vars:
-                    test_val.append(test_var.get_assigned_value())
-                if not c.check(test_val):
-                    c_v.prune_value(v)
-                    prune_list.append((c_v, v))
 
-                    # If pruned any value, add constraint associated with the variable back
-                    for constraint in csp.get_cons_with_var(c_v):
-                        if (c_v, constraint) in cons_list:
-                            continue
-                        cons_list.append((c_v, constraint))
-                c_v.unassign()
-        for var in csp.get_all_vars():
-            if var.cur_domain_size() == 0:
-                return False, prune_list
+            # Do not try assigned variables or variables of the current constraint
+            if var == c_v or var.is_assigned():
+                continue
+
+            if c.get_num_unassigned_vars() == 1:
+                b = False
+                # Check all `values in the variable's domain
+                for v in var.cur_domain():
+                    var.assign(v)
+                    test_val = []
+
+                    # Obtain all assigned values in all variables
+                    for test_var in vars:
+                        test_val.append(test_var.get_assigned_value())
+                    # print(test_var, test_val)
+                    # Check if the assignment satisify the constraints
+                    if not c.check(test_val):
+                        var.prune_value(v)
+                        prune_list.append((var, v))
+
+                        # If pruned any value, add constraint associated with the variable back
+                        for constraint in csp.get_cons_with_var(var):
+                            # print((var, constraint))
+                            # print(constraint)
+                            # Do not add the same connection back
+                            if (var, constraint) not in cons_list:
+
+                                # print((var, constraint))
+                                cons_list.append((var, constraint))
+                        b = True
+
+                    var.unassign()
+                #             if var.cur_domain_size() == 0:
+                #                 b = True
+                # if b:
+                #     for constraint in csp.get_cons_with_var(var):
+                #         if (var, constraint) not in cons_list:
+                #             cons_list.append((var, constraint))
+
+                # Check if any pruning occurred
+                for var in vars:
+                    if var.cur_domain_size() == 0:
+                        return False, prune_list
     return True, prune_list
 
 
