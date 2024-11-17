@@ -70,6 +70,30 @@ def prop_FC(csp, last_assigned_var=None):
     return True, prune_list
 
 
+def revise(X, constraint, pruned):
+    revised = False
+    # For each v in Dx do
+    for v in X.cur_domain():
+        # Check values w in Dy that makes (v, w) arc consistent
+        arc_consistent = False
+        # Look for X and value pair in the constraint
+        for sat_tup in constraint.sup_tuples.get((X, v), []):
+            # Check all variables within the constraint for arc-consistency on x
+            for i, w in enumerate(constraint.get_scope()):
+                if w != X and w.in_cur_domain(sat_tup[i]):
+                    arc_consistent = True
+                    break
+            if arc_consistent:
+                break
+
+        # Delete v from Dx
+        if not arc_consistent:
+            X.prune_value(v)
+            pruned.append((X, v))
+            revised = True
+    return revised, pruned
+
+
 def prop_AC3(csp, last_assigned_var=None):
     """
     This is a propagator to perform the AC-3 algorithm.
@@ -97,70 +121,32 @@ def prop_AC3(csp, last_assigned_var=None):
         all the constraints and a list of variable and value pairs pruned.
     :rtype: boolean, List[(Variable, Value)]
     """
-    prune_list = []
     cons_list = deque()
-    # Check all constraints if the last assigned variable is None
+    pruned = []
+
+    # Initialize the cons_list with constraints
     if last_assigned_var == None:
         for v in csp.get_all_vars():
             for c in csp.get_cons_with_var(v):
-                cons_list.append((v, c))
+                cons_list.append(c)
     else:
-        # Only check constraints of the last variable
         for c in csp.get_cons_with_var(last_assigned_var):
-            cons_list.append((last_assigned_var, c))
+            cons_list.append(c)
 
-    # Loop through the constraint queue
     while cons_list:
-        c_v, c = cons_list.popleft()
+        c = cons_list.popleft()
+        for var in c.get_scope():
+            revised, pruned = revise(var, c, pruned)
+            if revised:
+                # Return false if Di is empty
+                if var.cur_domain_size() == 0:
+                    return False, pruned
+                # For constraints of x, get the variables connected and add the constraint
+                for connection_c in csp.get_cons_with_var(var):
+                    if connection_c != c:
+                        cons_list.append(connection_c)
 
-        # Get all variables in the constraint
-        vars = c.get_scope()
-        for var in vars:
-
-            # Do not try assigned variables or variables of the current constraint
-            if var == c_v or var.is_assigned():
-                continue
-
-            if c.get_num_unassigned_vars() == 1:
-                b = False
-                # Check all `values in the variable's domain
-                for v in var.cur_domain():
-                    var.assign(v)
-                    test_val = []
-
-                    # Obtain all assigned values in all variables
-                    for test_var in vars:
-                        test_val.append(test_var.get_assigned_value())
-                    # print(test_var, test_val)
-                    # Check if the assignment satisify the constraints
-                    if not c.check(test_val):
-                        var.prune_value(v)
-                        prune_list.append((var, v))
-
-                        # If pruned any value, add constraint associated with the variable back
-                        for constraint in csp.get_cons_with_var(var):
-                            # print((var, constraint))
-                            # print(constraint)
-                            # Do not add the same connection back
-                            if (var, constraint) not in cons_list:
-
-                                # print((var, constraint))
-                                cons_list.append((var, constraint))
-                        b = True
-
-                    var.unassign()
-                #             if var.cur_domain_size() == 0:
-                #                 b = True
-                # if b:
-                #     for constraint in csp.get_cons_with_var(var):
-                #         if (var, constraint) not in cons_list:
-                #             cons_list.append((var, constraint))
-
-                # Check if any pruning occurred
-                for var in vars:
-                    if var.cur_domain_size() == 0:
-                        return False, prune_list
-    return True, prune_list
+    return True, pruned
 
 
 def ord_mrv(csp):
