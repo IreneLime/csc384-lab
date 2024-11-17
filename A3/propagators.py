@@ -6,6 +6,7 @@
 ############################################################
 
 from collections import deque
+import math
 
 
 def prop_FC(csp, last_assigned_var=None):
@@ -162,8 +163,20 @@ def ord_mrv(csp):
     :returns: the next variable to assign based on MRV
 
     """
+    min_value = math.inf
+    var_list = csp.get_all_unasgn_vars()
+    if not var_list:
+        return None
 
-    raise NotImplementedError
+    for i, var in enumerate(var_list):
+        # Initialize MRV variable
+        if i == 0:
+            MRV_var = var
+
+        # Want the minimum number of values associated with the variable
+        if var.cur_domain_size() < min_value:
+            MRV_var = var
+    return MRV_var
 
 
 ###############################################################################
