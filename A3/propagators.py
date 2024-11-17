@@ -33,7 +33,7 @@ def prop_FC(csp, last_assigned_var=None):
     :returns: The boolean indicates whether forward checking is successful.
         The boolean is False if at least one domain becomes empty after forward checking.
         The boolean is True otherwise.
-        Also returns a list of variable and value pairs pruned.
+        Also returns a list of variable and value pairs prune_list.
     :rtype: boolean, List[(Variable, Value)]
     """
     prune_list = []
@@ -70,7 +70,7 @@ def prop_FC(csp, last_assigned_var=None):
     return True, prune_list
 
 
-def revise(X, constraint, pruned):
+def revise(X, constraint, prune_list):
     revised = False
     # For each v in Dx do
     for v in X.cur_domain():
@@ -89,9 +89,9 @@ def revise(X, constraint, pruned):
         # Delete v from Dx
         if not arc_consistent:
             X.prune_value(v)
-            pruned.append((X, v))
+            prune_list.append((X, v))
             revised = True
-    return revised, pruned
+    return revised, prune_list
 
 
 def prop_AC3(csp, last_assigned_var=None):
@@ -106,7 +106,7 @@ def prop_AC3(csp, last_assigned_var=None):
     every value in the variable's domain.
     For each variable and value pair, prune it if it is not part of
     a satisfying assignment for the constraint.
-    Finally, if we have pruned any value for a variable,
+    Finally, if we have prune_list any value for a variable,
     add other constraints involving the variable back into the queue.
 
     :param csp: The CSP problem
@@ -118,11 +118,11 @@ def prop_AC3(csp, last_assigned_var=None):
     :type last_assigned_var: Variable
 
     :returns: a boolean indicating if the current assignment satisifes
-        all the constraints and a list of variable and value pairs pruned.
+        all the constraints and a list of variable and value pairs prune_list.
     :rtype: boolean, List[(Variable, Value)]
     """
     cons_list = deque()
-    pruned = []
+    prune_list = []
 
     # Initialize the cons_list with constraints
     if last_assigned_var == None:
@@ -136,17 +136,17 @@ def prop_AC3(csp, last_assigned_var=None):
     while cons_list:
         c = cons_list.popleft()
         for var in c.get_scope():
-            revised, pruned = revise(var, c, pruned)
+            revised, prune_list = revise(var, c, prune_list)
             if revised:
                 # Return false if Di is empty
                 if var.cur_domain_size() == 0:
-                    return False, pruned
+                    return False, prune_list
                 # For constraints of x, get the variables connected and add the constraint
                 for connection_c in csp.get_cons_with_var(var):
                     if connection_c != c:
                         cons_list.append(connection_c)
 
-    return True, pruned
+    return True, prune_list
 
 
 def ord_mrv(csp):
@@ -188,7 +188,7 @@ def prop_BT(csp, last_assigned_var=None):
     :type last_assigned_var: Variable
 
     :returns: a boolean indicating if the current assignment satisifes all the constraints
-        and a list of variable and value pairs pruned.
+        and a list of variable and value pairs prune_list.
     :rtype: boolean, List[(Variable, Value)]
 
     """
