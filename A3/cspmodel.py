@@ -322,16 +322,64 @@ def create_no_dot_constraints(dim, dots, no_dot_tuples, variables):
     :rtype: List[Constraint]
     """
     c_list = []
+    dot_var = []
+    # Remove variables that already have dot constraints
     for d in dots:
-        if d.color != CHAR_EMPTY:
-            continue
-        # Obtain variables around the dot
-        curr_var = variables[d.cell_row * dim + d.cell_col]
-        constrain_var = variables[d.cell2_row * dim + d.cell2_col]
-
-        name = f"NODOT_{curr_var.name}_{constrain_var.name}"
-        const = Constraint(name, [curr_var, constrain_var])
-        # Add not dot tuples to the constraint
-        const.add_satisfying_tuples(no_dot_tuples)
-        c_list.append(const)
+        if d.color == CHAR_BLACK or d.color == CHAR_WHITE:
+            # Obtain variables around the dot
+            curr_var = variables[d.cell_row * dim + d.cell_col]
+            constrain_var = variables[d.cell2_row * dim + d.cell2_col]
+            dot_var.append([curr_var, constrain_var])
+            dot_var.append([constrain_var, curr_var])
+    # Get all variables from the board & do not add dot constrained variables
+    for r in range(dim):
+        for c in range(dim):
+            if (r - 1) >= 0:
+                if [
+                    variables[r * dim + c],
+                    variables[(r - 1) * dim + c],
+                ] not in dot_var:
+                    name = f"NODOT_{variables[r * dim + c].name}_{variables[(r - 1) * dim + c].name}"
+                    const = Constraint(
+                        name, [variables[r * dim + c], variables[(r - 1) * dim + c]]
+                    )
+                    # Add not dot tuples to the constraint
+                    const.add_satisfying_tuples(no_dot_tuples)
+                    c_list.append(const)
+            elif (r + 1) < dim:
+                if [
+                    variables[r * dim + c],
+                    variables[(r + 1) * dim + c],
+                ] not in dot_var:
+                    name = f"NODOT_{variables[r * dim + c].name}_{variables[(r + 1) * dim + c].name}"
+                    const = Constraint(
+                        name, [variables[r * dim + c], variables[(r + 1) * dim + c]]
+                    )
+                    # Add not dot tuples to the constraint
+                    const.add_satisfying_tuples(no_dot_tuples)
+                    c_list.append(const)
+            if (c - 1) >= 0:
+                if [
+                    variables[r * dim + c],
+                    variables[r * dim + (c - 1)],
+                ] not in dot_var:
+                    name = f"NODOT_{variables[r * dim + c].name}_{variables[r * dim + (c - 1)].name}"
+                    const = Constraint(
+                        name, [variables[r * dim + c], variables[r * dim + (c - 1)]]
+                    )
+                    # Add not dot tuples to the constraint
+                    const.add_satisfying_tuples(no_dot_tuples)
+                    c_list.append(const)
+            elif (c + 1) < dim:
+                if [
+                    variables[r * dim + c],
+                    variables[r * dim + (c + 1)],
+                ] not in dot_var:
+                    name = f"NODOT_{variables[r * dim + c].name}_{variables[r * dim + (c + 1)].name}"
+                    const = Constraint(
+                        name, [variables[r * dim + c], variables[r * dim + (c + 1)]]
+                    )
+                    # Add not dot tuples to the constraint
+                    const.add_satisfying_tuples(no_dot_tuples)
+                    c_list.append(const)
     return c_list
