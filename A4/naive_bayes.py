@@ -90,9 +90,30 @@ def sum_out(factor, variable):
 
     ### YOUR CODE HERE ###
     # Corner case: variable not in the scope of the factor
-    if variable not in factor.get_scope():
+    if factor.get_variable(variable.name) == None:
         return factor
-    sum_out_factor = Factor(f"{factor.name}_sum_out", factor.get_scoope())
+
+    scope = [v for v in factor.get_scope() if v != variable]
+    sum_out_factor = Factor(f"Sum out {factor.name}", scope)
+    # Get all domains of all variables
+    all_domain = [v.domain() for v in scope]
+    # Cartesian product of all variable combinations
+    assigned_list = []
+    total_prob = 0
+    for assign in product(*all_domain):
+        # Order in the scope's order to obtain the prob from the factor's table
+
+        for value in variable.domain():
+            ordered_assign = list(assign)
+            ordered_assign.insert(factor.get_scope().index(variable), value)
+            total_prob += factor.get_value(ordered_assign)
+        assign = list(assign)
+        assign.append(total_prob)
+        assigned_list.append(list(assign))
+        total_prob = 0
+
+    sum_out_factor.add_values(assigned_list)
+
     return sum_out_factor
     raise NotImplementedError
 
@@ -248,39 +269,41 @@ def explore(bayes_net, question):
     raise NotImplementedError
 
 
-# Main function to test restrict
-def main():
-    # Create variables
-    A = Variable("A", [1, 2])
-    B = Variable("B", ["x", "y"])
-    C = Variable("C", ["red", "blue"])
+# # Main function to test restrict
+# def main():
+#     # Create variables
+#     A = Variable("A", [1, 2])
+#     B = Variable("B", ["x", "y"])
+#     C = Variable("C", ["red", "blue"])
 
-    # Create a factor with scope [A, B, C]
-    factor = Factor("Factor_ABC", [A, B, C])
-    factor.add_values(
-        [
-            [1, "x", "red", 0.1],
-            [1, "x", "blue", 0.2],
-            [1, "y", "red", 0.3],
-            [1, "y", "blue", 0.4],
-            [2, "x", "red", 0.5],
-            [2, "x", "blue", 0.6],
-            [2, "y", "red", 0.7],
-            [2, "y", "blue", 0.8],
-        ]
-    )
+#     # Create a factor with scope [A, B, C]
+#     factor = Factor("Factor_ABC", [A, B, C])
+#     factor.add_values(
+#         [
+#             [1, "x", "red", 0.1],
+#             [1, "x", "blue", 0.2],
+#             [1, "y", "red", 0.3],
+#             [1, "y", "blue", 0.4],
+#             [2, "x", "red", 0.5],
+#             [2, "x", "blue", 0.6],
+#             [2, "y", "red", 0.7],
+#             [2, "y", "blue", 0.8],
+#         ]
+#     )
 
-    print("Original Factor Values:")
-    print(factor.get_table())
+#     print("Original Factor Values:")
+#     print(factor.get_table())
 
-    ### Test restrict
-    # Restrict variable C to "red"
-    restricted_factor = restrict(factor, B, "x")
+#     ### Test restrict
+#     # new_factor = restrict(factor, B, "x")
 
-    print("\nRestricted Factor Values (C='red'):")
-    print(restricted_factor.get_table())
+#     ### Test sum out
+#     new_factor = sum_out(factor, C)
+
+#     print("\nAfter operation:")
+#     print(new_factor.get_table())
 
 
-# Run the main function
-if __name__ == "__main__":
-    main()
+# # Run the main function
+# if __name__ == "__main__":
+#     main()
