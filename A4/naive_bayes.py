@@ -188,6 +188,42 @@ def ve(bayes_net, var_query, varlist_evidence):
 
     """
     ### YOUR CODE HERE ###
+    # Restrict factors
+    restricted_f = []
+    for f in bayes_net.factors():
+        # Restrict each variable to its observed value
+        for var in varlist_evidence:
+            evid = var.get_evidence()
+            restricted_f.append(restrict(f, var, evid))
+
+    # Eliminate the hidden variable
+    hidden_var = []
+    for var in bayes_net.variables():
+        if (var != var_query) and (var not in varlist_evidence):
+            hidden_var.append(var)
+    print(hidden_var)
+    if not hidden_var:
+        factor = multiply(restricted_f)
+        return normalize(factor)
+
+    final_restricted_f = []
+    for var in hidden_var:
+        print(var)
+        # Multiply to produce factor
+        f_with_hidden = []
+        for f in restricted_f:
+            if var in f.get_scope():
+                f_with_hidden.append(f)
+
+        mul_f = multiply(f_with_hidden)
+
+        # Sum out hidden variable from the factor
+        print("sum")
+        sum_out_f = sum_out(mul_f, var)
+        print(sum_out_f)
+        final_restricted_f.append(sum_out_f)
+    factor = multiply(final_restricted_f)
+    return normalize(factor)
 
     raise NotImplementedError
 
@@ -295,88 +331,157 @@ def explore(bayes_net, question):
 
 
 # # Main function to test restrict
-# def main():
-#     # Create variables
-#     A = Variable("A", [1, 2])
-#     B = Variable("B", ["x", "y"])
-#     C = Variable("C", ["red", "blue"])
+def main():
+    #     # Create variables
+    A = Variable("A", [0, 1])
+    B = Variable("B", [0, 1])
+    C = Variable("C", ["red", "blue"])
 
-#     # Test restrict and sum out
-#     """
-#     # Create a factor with scope [A, B, C]
-#     factor = Factor("Factor_ABC", [A, B, C])
-#     factor.add_values(
-#         [
-#             [1, "x", "red", 0.1],
-#             [1, "x", "blue", 0.2],
-#             [1, "y", "red", 0.3],
-#             [1, "y", "blue", 0.4],
-#             [2, "x", "red", 0.5],
-#             [2, "x", "blue", 0.6],
-#             [2, "y", "red", 0.7],
-#             [2, "y", "blue", 0.8],
-#         ]
-#     )
+    #     # Test restrict and sum out
+    #     """
+    #     # Create a factor with scope [A, B, C]
+    #     factor = Factor("Factor_ABC", [A, B, C])
+    #     factor.add_values(
+    #         [
+    #             [1, "x", "red", 0.1],
+    #             [1, "x", "blue", 0.2],
+    #             [1, "y", "red", 0.3],
+    #             [1, "y", "blue", 0.4],
+    #             [2, "x", "red", 0.5],
+    #             [2, "x", "blue", 0.6],
+    #             [2, "y", "red", 0.7],
+    #             [2, "y", "blue", 0.8],
+    #         ]
+    #     )
 
-#     print("Original Factor Values:")
-#     print(factor.get_table())
+    #     print("Original Factor Values:")
+    #     print(factor.get_table())
 
-#     ### Test restrict
-#     new_factor = restrict(factor, B, "x")
+    #     ### Test restrict
+    #     new_factor = restrict(factor, B, "x")
 
-#     ### Test sum out
-#     new_factor = sum_out(factor, C)
+    #     ### Test sum out
+    #     new_factor = sum_out(factor, C)
 
-#     print("\nAfter operation:")
-#     print(new_factor.get_table())
-#     """
+    #     print("\nAfter operation:")
+    #     print(new_factor.get_table())
+    #     """
 
-#     # Test multiply
-#     # Create the first factor with scope [A, B]
-#     factor1 = Factor("Factor_AB", [A, B])
-#     factor1.add_values(
-#         [
-#             [1, "x", 0.5],
-#             [1, "y", 0.3],
-#             [2, "x", 0.7],
-#             [2, "y", 0.9],
-#         ]
-#     )
+    #     # Test multiply
+    #     # Create the first factor with scope [A, B]
+    #     factor1 = Factor("Factor_AB", [A, B])
+    #     factor1.add_values(
+    #         [
+    #             [1, "x", 0.5],
+    #             [1, "y", 0.3],
+    #             [2, "x", 0.7],
+    #             [2, "y", 0.9],
+    #         ]
+    #     )
 
-#     # Create the second factor with scope [B, C]
-#     factor2 = Factor("Factor_BC", [B, C])
-#     factor2.add_values(
-#         [
-#             ["x", "red", 0.6],
-#             ["x", "blue", 0.8],
-#             ["y", "red", 0.4],
-#             ["y", "blue", 0.2],
-#         ]
-#     )
+    #     # Create the second factor with scope [B, C]
+    #     factor2 = Factor("Factor_BC", [B, C])
+    #     factor2.add_values(
+    #         [
+    #             ["x", "red", 0.6],
+    #             ["x", "blue", 0.8],
+    #             ["y", "red", 0.4],
+    #             ["y", "blue", 0.2],
+    #         ]
+    #     )
 
-#     # Create the third factor with scope [C]
-#     factor3 = Factor("Factor_C", [C])
-#     factor3.add_values(
-#         [
-#             ["red", 0.9],
-#             ["blue", 0.7],
-#         ]
-#     )
+    #     # Create the third factor with scope [C]
+    #     factor3 = Factor("Factor_C", [C])
+    #     factor3.add_values(
+    #         [
+    #             ["red", 0.9],
+    #             ["blue", 0.7],
+    #         ]
+    #     )
 
-#     # Print original factors
-#     print("Factor 1:")
-#     print(factor1.get_table())
-#     print("\nFactor 2:")
-#     print(factor2.get_table())
-#     print("\nFactor 3:")
-#     print(factor3.get_table())
+    #     # Print original factors
+    #     print("Factor 1:")
+    #     print(factor1.get_table())
+    #     print("\nFactor 2:")
+    #     print(factor2.get_table())
+    #     print("\nFactor 3:")
+    #     print(factor3.get_table())
 
-#     # Multiply the factors
-#     multiplied_factor = multiply([factor1, factor2, factor3])
-#     print("\nResulting Factor After Multiplication:")
-#     print(multiplied_factor.get_table())
+    #     # Multiply the factors
+    #     multiplied_factor = multiply([factor1, factor2, factor3])
+    #     print("\nResulting Factor After Multiplication:")
+    #     print(multiplied_factor.get_table())
+    # Define Variables
+    # A = Variable("A", [0, 1])
+    # B = Variable("B", [0, 1])
+
+    # Define Factors
+    # Define Factors
+    factor_A = Factor("P(A)", [A])
+    factor_A.add_values([[0, 0.6], [1, 0.4]])
+
+    factor_C_given_A = Factor("P(C|A)", [A, C])
+    factor_C_given_A.add_values(
+        [
+            [0, "red", 0.7],
+            [0, "blue", 0.3],  # P(C|A=0)
+            [1, "red", 0.4],
+            [1, "blue", 0.6],  # P(C|A=1)
+        ]
+    )
+
+    factor_B_given_C = Factor("P(B|C)", [C, B])
+    factor_B_given_C.add_values(
+        [
+            ["red", 0, 0.9],
+            ["red", 1, 0.1],  # P(B|C=red)
+            ["blue", 0, 0.2],
+            ["blue", 1, 0.8],  # P(B|C=blue)
+        ]
+    )
+
+    # Define Bayesian Network
+    bayes_net = BN(
+        "Hidden Variable BN", [A, B, C], [factor_A, factor_C_given_A, factor_B_given_C]
+    )
+
+    # Evidence and Query
+    evidence = {A: 0}  # Evidence: A=0
+    query_variable = B  # Query: Compute P(B | A=0)
+
+    # Run variable elimination
+    result = ve(bayes_net, query_variable, evidence)
+
+    # Expected Result
+    expected_factor = Factor("P(B|A=0)", [B])
+    expected_factor.add_values([[0, 0.8], [1, 0.2]])
+
+    # Validate Results
+    print("Testing VE function...")
+
+    # Check the scope
+    if result.get_scope() != [B]:
+        print(
+            f"Test Failed: Scope should only contain the query variable B, got {result.get_scope()}"
+        )
+        return
+
+    # Check the values
+    expected_values = {0: 0.8, 1: 0.2}
+    passed = True
+    for value in B.domain():
+        actual = result.get_value([value])
+        expected = expected_values[value]
+        if abs(actual - expected) >= 0.001:
+            print(
+                f"Test Failed: Incorrect probability for B={value}: expected {expected}, got {actual}"
+            )
+            passed = False
+
+    if passed:
+        print("All tests passed for VE!")
 
 
-# # Run the main function
-# if __name__ == "__main__":
-#     main()
+# Run the main function
+if __name__ == "__main__":
+    main()
