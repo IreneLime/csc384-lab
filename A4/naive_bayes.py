@@ -102,11 +102,13 @@ def sum_out(factor, variable):
     total_prob = 0
     for assign in product(*all_domain):
         # Order in the scope's order to obtain the prob from the factor's table
-
+        # Sum up all probabilities with the given variable
         for value in variable.domain():
             ordered_assign = list(assign)
             ordered_assign.insert(factor.get_scope().index(variable), value)
             total_prob += factor.get_value(ordered_assign)
+
+        # Summed out combinations have the total probability based on Sum Rule
         assign = list(assign)
         assign.append(total_prob)
         assigned_list.append(list(assign))
@@ -130,17 +132,39 @@ def multiply(factor_list):
     # Corner case:list is empty
     if not factor_list:
         return None
-    mul_v = 1
-    var_list = []
-    name = ""
+    multiply_factor_name = "Multiply"
+
+    # Get all possible variables in the factor list
+    all_variables = []
     for f in factor_list:
-        for v in f.values:
-            mul_v *= v
-        name += f.name + "_"
-        var_list.append(f.get_scope())
-    mul_factor = Factor(f"{name}normalized", var_list)
-    mul_factor.values = mul_v
-    return mul_factor
+        multiply_factor_name += f" {f.name}"
+        for var in f.get_scope():
+            if var not in all_variables:
+                all_variables.append(var)
+
+    # Iterate through all combinations of values
+    all_domain = [v.domain() for v in all_variables]
+    assigned_list = []
+    for assign in product(*all_domain):
+        assign = list(assign)
+        total_prob = 1
+
+        # Multiply probabilities from the same value
+        for f in factor_list:
+            factor_assign = []
+            for v in f.get_scope():
+                factor_assign.append(assign[all_variables.index(v)])
+            total_prob *= f.get_value(factor_assign)
+
+        # Add the multiplied probabilities to the set of variables
+        assign.append(total_prob)
+        assigned_list.append(list(assign))
+
+    # Create new factor
+    multiply_factor = Factor(multiply_factor_name, all_variables)
+    multiply_factor.add_values(assigned_list)
+    return multiply_factor
+
     raise NotImplementedError
 
 
@@ -164,6 +188,7 @@ def ve(bayes_net, var_query, varlist_evidence):
 
     """
     ### YOUR CODE HERE ###
+
     raise NotImplementedError
 
 
@@ -276,6 +301,8 @@ def explore(bayes_net, question):
 #     B = Variable("B", ["x", "y"])
 #     C = Variable("C", ["red", "blue"])
 
+#     # Test restrict and sum out
+#     """
 #     # Create a factor with scope [A, B, C]
 #     factor = Factor("Factor_ABC", [A, B, C])
 #     factor.add_values(
@@ -295,13 +322,59 @@ def explore(bayes_net, question):
 #     print(factor.get_table())
 
 #     ### Test restrict
-#     # new_factor = restrict(factor, B, "x")
+#     new_factor = restrict(factor, B, "x")
 
 #     ### Test sum out
 #     new_factor = sum_out(factor, C)
 
 #     print("\nAfter operation:")
 #     print(new_factor.get_table())
+#     """
+
+#     # Test multiply
+#     # Create the first factor with scope [A, B]
+#     factor1 = Factor("Factor_AB", [A, B])
+#     factor1.add_values(
+#         [
+#             [1, "x", 0.5],
+#             [1, "y", 0.3],
+#             [2, "x", 0.7],
+#             [2, "y", 0.9],
+#         ]
+#     )
+
+#     # Create the second factor with scope [B, C]
+#     factor2 = Factor("Factor_BC", [B, C])
+#     factor2.add_values(
+#         [
+#             ["x", "red", 0.6],
+#             ["x", "blue", 0.8],
+#             ["y", "red", 0.4],
+#             ["y", "blue", 0.2],
+#         ]
+#     )
+
+#     # Create the third factor with scope [C]
+#     factor3 = Factor("Factor_C", [C])
+#     factor3.add_values(
+#         [
+#             ["red", 0.9],
+#             ["blue", 0.7],
+#         ]
+#     )
+
+#     # Print original factors
+#     print("Factor 1:")
+#     print(factor1.get_table())
+#     print("\nFactor 2:")
+#     print(factor2.get_table())
+#     print("\nFactor 3:")
+#     print(factor3.get_table())
+
+#     # Multiply the factors
+#     multiplied_factor = multiply([factor1, factor2, factor3])
+#     print("\nResulting Factor After Multiplication:")
+#     print(multiplied_factor.get_table())
 
 
 # # Run the main function
