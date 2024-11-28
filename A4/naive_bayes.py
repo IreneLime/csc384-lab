@@ -31,7 +31,6 @@ def normalize(factor):
 
     norm_factor = Factor(f"Normalilze {factor.name}", factor.get_scope())
     norm_factor.values = norm_values
-    print(norm_factor.values)
     return norm_factor
 
     raise NotImplementedError
@@ -61,7 +60,6 @@ def restrict(factor, variable, value):
     all_domain = [v.domain() for v in scope]
     # Cartesian product of all variable combinations
     assigned_list = []
-    print(value)
     for assign in product(*all_domain):
         # Order in the scope's order to obtain the prob from the factor's table
         ordered_assign = list(assign)
@@ -71,7 +69,6 @@ def restrict(factor, variable, value):
         assign = list(assign)
         assign.append(factor.get_value(ordered_assign))
         assigned_list.append(list(assign))
-        print(list(assign))
 
     # Add the new table to the new factor
     restrict_factor.add_values(assigned_list)
@@ -198,8 +195,6 @@ def ve(bayes_net, var_query, varlist_evidence):
     for var in bayes_net.variables():
         if (var != var_query) and (var not in varlist_evidence):
             hidden_var.append(var)
-    print("hidden var:")
-    print(hidden_var)
 
     # Restrict factors
     restricted_f = []
@@ -207,20 +202,11 @@ def ve(bayes_net, var_query, varlist_evidence):
         # Restrict each variable to its observed value
         restrict_f = f
         for var in varlist_evidence:
-            # r = True
-            # for v in hidden_var:
-            #     if v in f.get_scope():
-            #         r = False
-            #         break
-            # if not r:
-            #     continue
             if var in f.get_scope():
                 evid = var.get_evidence()
 
                 restrict_f = restrict(restrict_f, var, evid)
-                restrict_f.print_table()
                 restricted_f.append(restrict_f)
-    print("restricted)")
 
     # When there is no hidden variable
     if not hidden_var:
@@ -230,29 +216,16 @@ def ve(bayes_net, var_query, varlist_evidence):
     # When there are hidden variables
     final_restricted_f = []
     for var in hidden_var:
-        print(var)
         # Multiply to produce factor
-        f_with_hidden = []
-        for f in restricted_f:
-            # for v in varlist_evidence:
-            #     print(v)
-            #     if v in f.get_scope():
-            f_with_hidden.append(f)
-        print(f_with_hidden)
+        f_with_hidden = restricted_f
 
         mul_f = multiply(f_with_hidden)
-        print("multiply")
-        mul_f.print_table()
 
         # Sum out hidden variable from the factor
-        print("sum")
         sum_out_f = sum_out(mul_f, var)
 
-        sum_out_f.print_table()
         final_restricted_f.append(sum_out_f)
-    print(final_restricted_f[0].get_scope())
     factor = multiply(final_restricted_f)
-    normalize(factor).print_table()
     return normalize(factor)
 
     raise NotImplementedError
@@ -492,21 +465,8 @@ def main():
 
     # Check the values
     print(result)
-    expected_values = {0: 0.377, 1: 0.623}
-    # passed = True
-    # for value in B.domain():
-    #     actual = result.get_value([value])
-    #     expected = expected_values[value]
-    #     if abs(actual - expected) >= 0.001:
-    #         print(
-    #             f"Test Failed: Incorrect probability for B={value}: expected {expected}, got {actual}"
-    #         )
-    #         passed = False
-
-    # if passed:
-    #     print("All tests passed for VE!")
 
 
 # # Run the main function
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
