@@ -298,15 +298,94 @@ def naive_bayes_model(
     """
     ### READ IN THE DATA
     input_data = []
-    with open(data_file, newline="") as csvfile:
+    with open(data_file, newline="", encoding='utf-8-sig') as csvfile:
         reader = csv.reader(csvfile)
         headers = next(reader, None)  # skip header row
+        header = [header.strip() for header in headers]
         for row in reader:
             input_data.append(row)
 
     ### YOUR CODE HERE ###
+    print(header)
+    var_list = list(variable_domains.keys())
+    print(var_list)
+    print(class_var)
+    salary_idx = var_list.index(class_var.name)
+
+    factor_list = []
+    variable_list = []
+
+    class_factor = Factor(class_var.name, [class_var])
+    factor_element = [[d] for d in class_var.domain()]
+    all_class_elements = []
+    for r in input_data:
+        all_class_elements.append(r[header.index(class_var.name)])
+    total_count = len(all_class_elements)
+    for i, d in enumerate(class_var.domain()):
+        factor_element[i].append(all_class_elements.count(d) / total_count)
+    class_factor.add_values(factor_element)
+    variable_list.append(class_var)
+    factor_list.append(class_factor)
+
+    # Check all variables
+    for variable in var_list:
+        print(variable)
+        if variable == class_var.name:
+            continue
+        print(class_var.name)
+        print(variable)
+
+        # Create variables
+        dependent_variable = Variable(variable, variable_domains[variable])
+        variable_list.append(dependent_variable)
+
+        # Create a factor
+        factor = Factor(f"{variable},{class_var.name}", [dependent_variable, class_var])
+
+        # Obtain all combinations of dependent and class variables
+        print(variable_domains[variable])
+        total_factor_element = []
+        for var in class_var.domain():
+            factor_element = list(product(variable_domains[variable], [var]))
+            factor_count = [0] * len(factor_element)
+
+            for r in input_data:
+                if variable == 'MaritalStatus':
+                    print()
+                    print(factor_element)
+                    print(header.index(variable))
+                    print(tuple([r[header.index(variable)], r[salary_idx]]))
+                    print()
+                if tuple([r[header.index(variable)], r[salary_idx]]) in factor_element:
+                    factor_index = factor_element.index(tuple([r[header.index(variable)], r[salary_idx]]))
+                    factor_count[factor_index] += 1
+
+            # print(factor_element)
+            # print(factor_count)
+
+
+            total_count = sum(factor_count)
+            if total_count != 0:
+                factor_count = [count / total_count for count in factor_count]
+            for j in range(len(factor_element)):
+                factor_element[j] = list(factor_element[j])
+                factor_element[j].append(factor_count[j])
+                total_factor_element.append(factor_element[j])
+
+        print(total_factor_element)
+        print()
+        factor.add_values(total_factor_element)
+        factor_list.append(factor)
+        print(factor_list)
+
+    print(var_list)
+    print(factor_list)
+    bayes_net = BN(f"NaiveBayes_{class_var.name}", variable_list, factor_list)
+    return bayes_net
+
     raise NotImplementedError
 
+# naive_bayes_model("adult-train_tiny.csv")
 
 def explore(bayes_net, question):
     """
@@ -455,10 +534,6 @@ def main():
 
     # Run variable elimination
     result = ve(bayes_net, query_variable, evidence)
-
-    # Expected Result
-    expected_factor = Factor("P(B|not C=0)", [B])
-    expected_factor.add_values([[0, 0.377], [1, 0.623]])
 
     # Validate Results
     print("Testing VE function...")
