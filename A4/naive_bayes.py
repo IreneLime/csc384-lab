@@ -301,25 +301,25 @@ def naive_bayes_model(
     with open(data_file, newline="", encoding='utf-8-sig') as csvfile:
         reader = csv.reader(csvfile)
         headers = next(reader, None)  # skip header row
-        header = [header.strip() for header in headers]
+        header = [header.strip() for header in headers] # Create header list without encoding
         for row in reader:
             input_data.append(row)
 
     ### YOUR CODE HERE ###
-    print(header)
     var_list = list(variable_domains.keys())
-    print(var_list)
-    print(class_var)
     salary_idx = var_list.index(class_var.name)
 
     factor_list = []
     variable_list = []
 
+    # Create a factor with only the class variable
     class_factor = Factor(class_var.name, [class_var])
     factor_element = [[d] for d in class_var.domain()]
     all_class_elements = []
+    # Get all class variable occurrences in a list
     for r in input_data:
         all_class_elements.append(r[header.index(class_var.name)])
+    # Calculate the probabilities of each class variable domain
     total_count = len(all_class_elements)
     for i, d in enumerate(class_var.domain()):
         factor_element[i].append(all_class_elements.count(d) / total_count)
@@ -329,11 +329,8 @@ def naive_bayes_model(
 
     # Check all variables
     for variable in var_list:
-        print(variable)
         if variable == class_var.name:
             continue
-        print(class_var.name)
-        print(variable)
 
         # Create variables
         dependent_variable = Variable(variable, variable_domains[variable])
@@ -343,27 +340,19 @@ def naive_bayes_model(
         factor = Factor(f"{variable},{class_var.name}", [dependent_variable, class_var])
 
         # Obtain all combinations of dependent and class variables
-        print(variable_domains[variable])
         total_factor_element = []
         for var in class_var.domain():
             factor_element = list(product(variable_domains[variable], [var]))
             factor_count = [0] * len(factor_element)
 
+            # Count the number of occurrences of the variable from each line
             for r in input_data:
-                if variable == 'MaritalStatus':
-                    print()
-                    print(factor_element)
-                    print(header.index(variable))
-                    print(tuple([r[header.index(variable)], r[salary_idx]]))
-                    print()
+                # Note: there may be mismatch in the csv order and input variable list order
                 if tuple([r[header.index(variable)], r[salary_idx]]) in factor_element:
                     factor_index = factor_element.index(tuple([r[header.index(variable)], r[salary_idx]]))
                     factor_count[factor_index] += 1
 
-            # print(factor_element)
-            # print(factor_count)
-
-
+            # Calculate the probability distribution and add them as values to the combinations
             total_count = sum(factor_count)
             if total_count != 0:
                 factor_count = [count / total_count for count in factor_count]
@@ -372,20 +361,15 @@ def naive_bayes_model(
                 factor_element[j].append(factor_count[j])
                 total_factor_element.append(factor_element[j])
 
-        print(total_factor_element)
-        print()
         factor.add_values(total_factor_element)
         factor_list.append(factor)
-        print(factor_list)
 
-    print(var_list)
-    print(factor_list)
     bayes_net = BN(f"NaiveBayes_{class_var.name}", variable_list, factor_list)
     return bayes_net
 
     raise NotImplementedError
 
-# naive_bayes_model("adult-train_tiny.csv")
+# naive_bayes_model("data/adult-test.csv")
 
 def explore(bayes_net, question):
     """
