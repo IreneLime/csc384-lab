@@ -1,11 +1,12 @@
-1. Explain what the calculations above might or might not tell you about the "fairness" of your Naive Bayesian network. Explain in 50-100 words.
+1. Explain what the calculations above might or might not tell you about the "fairness" of your Naive Bayesian network.
+To evaluate “fairness,” we need to consider if the predictions achieve “demographic parity,” “separation,” and “sufficiency.” The resulting calculations shown below suggested that the Naïve Bayesian network does not achieve “fairness.” Results of questions 1 and 2 show that women are less likely to have a salary of less than $50K compared to man, resulting in demographic disparity. Results from questions 3 and 4 show that the predictions of salary are not independent of gender. Additionally, the accuracies are poor in questions 5 and 6, resulting in insufficient predictions.
+Question 1: 13.23
+Question 2: 53.70
+Question 3: 100.0
+Question 4: 0.0
+Question 5: 6.74
+Question 6: 27.06
 
-
-
-
-2. Would you be willing to use your model to recommend starting salaries for employees at a firm? Why or why not? Explain in 50-100 words.
-
-
-
-
+2. Would you be willing to use your model to recommend starting salaries for employees at a firm? Why or why not?
+I would not be willing to use my model to recommend starting salaries for employees at a firm because the predicted salaries are evaluated as unfair and the results may heavily depend on demographics such as gender. Using it to recommend starting salaries may be unfair and unethical for the employees. Moreover, the test data lack factors such as work experience, which may also be an important factor in determining a suitable salary range for employees.
 
