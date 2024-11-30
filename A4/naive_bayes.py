@@ -90,6 +90,8 @@ def sum_out(factor, variable):
 
     ### YOUR CODE HERE ###
     # Corner case: variable not in the scope of the factor
+    if factor == None:
+        return None
     if factor.get_variable(variable.name) == None:
         return factor
 
@@ -190,14 +192,20 @@ def ve(bayes_net, var_query, varlist_evidence):
     ### YOUR CODE HERE ###
     if var_query is None:
         var_query = bayes_net.variables()[0]
+    # print(var_query)
+    # for var in varlist_evidence:
+        # print(var)
     # Eliminate the hidden variable
     hidden_var = []
     for var in bayes_net.variables():
         if (var != var_query) and (var not in varlist_evidence):
+            # print(var)
             hidden_var.append(var)
+    # print(f"Hidden variable list: {hidden_var}")
 
     # Restrict factors
     restricted_f = []
+    # print("Restricted variables")
     for f in bayes_net.factors():
         # Restrict each variable to its observed value
         restrict_f = f
@@ -207,6 +215,7 @@ def ve(bayes_net, var_query, varlist_evidence):
 
                 restrict_f = restrict(restrict_f, var, evid)
                 restricted_f.append(restrict_f)
+                # restrict_f.print_table()
 
     # When there is no hidden variable
     if not hidden_var:
@@ -220,9 +229,13 @@ def ve(bayes_net, var_query, varlist_evidence):
         f_with_hidden = restricted_f
 
         mul_f = multiply(f_with_hidden)
+        # print(f"Multiplied variables {f_with_hidden}")
+        # mul_f.print_table()
 
         # Sum out hidden variable from the factor
         sum_out_f = sum_out(mul_f, var)
+        # print(f"Summed out variables {var}")
+        # sum_out_f.print_table()
 
         final_restricted_f.append(sum_out_f)
     factor = multiply(final_restricted_f)
@@ -369,7 +382,7 @@ def naive_bayes_model(
 
     raise NotImplementedError
 
-# naive_bayes_model("data/adult-test.csv")
+
 
 def explore(bayes_net, question):
     """
@@ -386,13 +399,75 @@ def explore(bayes_net, question):
     @return a percentage (between 0 and 100)
     """
     ### YOUR CODE HERE ###
+    if question not in [1, 2, 3, 4, 5, 6]:
+        return 0
     input_data = []
-    with open("data/adult-test.csv", newline="") as csvfile:
+    with open('data/adult-test.csv', newline="", encoding='utf-8-sig') as csvfile:
         reader = csv.reader(csvfile)
         headers = next(reader, None)  # skip header row
+        header = [header.strip() for header in headers] # Create header list without encoding
         for row in reader:
             input_data.append(row)
-    print(input_data)
+
+    # Make a dictionary with key = variable name and value = class Variable
+    var_dict = {}
+    for var in header:
+        var_dict[var] = bayes_net.get_variable(var)
+
+    gender_idx = header.index('Gender')
+    salary_idx = header.index('Salary')
+    salary_entry = '>=50K'
+    pred = 0
+    count = 0
+    if question in [1, 2, 5, 6]:
+        for r in input_data:
+            if (r[gender_idx] != 'Female' and question in [1, 5]) or (r[gender_idx] != 'Male' and question in [2, 6]):
+                continue
+
+            evid_list = []
+            # Create evidence based on the current value of the row
+            for i, data in enumerate(r):
+                if i in [gender_idx, salary_idx]:
+                    continue
+                var_dict[header[i]].set_evidence(data)
+                evid_list.append(var_dict[header[i]])
+
+            ret = ve(bayes_net, var_dict["Salary"], evid_list)
+
+            # Record when the model predicts >=50K
+            if ret.get_value([salary_entry]) > 0.5:
+                # Questions 1 and 2: Gender predicted with salary >= $50K
+                # Questions 5 and 6: Gender predicted with (P(Salary=">=$50K"|E) > 0.5) have an actual salary over $50K
+                if (question in [1, 2]) or (question in [5, 6] and r[salary_idx] == salary_entry):
+                    pred += 1
+            count += 1
+    elif question in [3, 4]:
+        for r in input_data:
+            if (r[gender_idx] != 'Female' and question == 3) or (r[gender_idx] != 'Male' and question == 4):
+                continue
+
+            evid_list = []
+            for i, data in enumerate(r):
+                if i in [gender_idx, salary_idx]:
+                    continue
+                var_dict[header[i]].set_evidence(data)
+                evid_list.append(var_dict[header[i]])
+
+            # P(S|Evidence)
+            evid_ve = ve(bayes_net, var_dict["Salary"], evid_list)
+
+            # P(S|Evidence,Gender)
+            var_dict[header[gender_idx]].set_evidence(r[gender_idx])
+            evid_list.append(var_dict[header[gender_idx]])
+            evid_gender_ve = ve(bayes_net, var_dict["Salary"], evid_list)
+
+            if evid_ve.get_value([salary_entry]) > evid_gender_ve.get_value([salary_entry]):
+                pred += 1
+            count += 1
+
+    return (pred / count) * 100
+
+
     raise NotImplementedError
 
 
@@ -403,85 +478,86 @@ def main():
     B = Variable("B", [0, 1])
     C = Variable("C", ["red", "blue"])
 
-    #     # Test restrict and sum out
-    #     """
-    #     # Create a factor with scope [A, B, C]
-    #     factor = Factor("Factor_ABC", [A, B, C])
-    #     factor.add_values(
-    #         [
-    #             [1, "x", "red", 0.1],
-    #             [1, "x", "blue", 0.2],
-    #             [1, "y", "red", 0.3],
-    #             [1, "y", "blue", 0.4],
-    #             [2, "x", "red", 0.5],
-    #             [2, "x", "blue", 0.6],
-    #             [2, "y", "red", 0.7],
-    #             [2, "y", "blue", 0.8],
-    #         ]
-    #     )
+    '''
+    # Test restrict and sum out
+    """
+    A = Variable("A", [1, 2])
+    B = Variable("B", ["x", "y"])
+    C = Variable("C", ["red", "blue"])
+    # Create a factor with scope [A, B, C]
+    factor = Factor("Factor_ABC", [A, B, C])
+    factor.add_values(
+        [
+            [1, "x", "red", 0.1],
+            [1, "x", "blue", 0.2],
+            [1, "y", "red", 0.3],
+            [1, "y", "blue", 0.4],
+            [2, "x", "red", 0.5],
+            [2, "x", "blue", 0.6],
+            [2, "y", "red", 0.7],
+            [2, "y", "blue", 0.8],
+        ]
+    )
 
-    #     print("Original Factor Values:")
-    #     print(factor.get_table())
+    print("Original Factor Values:")
+    print(factor.get_table())
 
-    #     ### Test restrict
-    #     new_factor = restrict(factor, B, "x")
+    ### Test restrict
+    new_factor = restrict(factor, B, "x")
 
-    #     ### Test sum out
-    #     new_factor = sum_out(factor, C)
+    ### Test sum out
+    new_factor = sum_out(factor, C)
 
-    #     print("\nAfter operation:")
-    #     print(new_factor.get_table())
-    #     """
+    print("\nAfter operation:")
+    print(new_factor.get_table())
+    """
 
-    #     # Test multiply
-    #     # Create the first factor with scope [A, B]
-    #     factor1 = Factor("Factor_AB", [A, B])
-    #     factor1.add_values(
-    #         [
-    #             [1, "x", 0.5],
-    #             [1, "y", 0.3],
-    #             [2, "x", 0.7],
-    #             [2, "y", 0.9],
-    #         ]
-    #     )
+    # Test multiply
+    # Create the first factor with scope [A, B]
+    factor1 = Factor("Factor_AB", [A, B])
+    factor1.add_values(
+        [
+            [1, "x", 0.5],
+            [1, "y", 0.3],
+            [2, "x", 0.7],
+            [2, "y", 0.9],
+        ]
+    )
 
-    #     # Create the second factor with scope [B, C]
-    #     factor2 = Factor("Factor_BC", [B, C])
-    #     factor2.add_values(
-    #         [
-    #             ["x", "red", 0.6],
-    #             ["x", "blue", 0.8],
-    #             ["y", "red", 0.4],
-    #             ["y", "blue", 0.2],
-    #         ]
-    #     )
+    # Create the second factor with scope [B, C]
+    factor2 = Factor("Factor_BC", [B, C])
+    factor2.add_values(
+        [
+            ["x", "red", 0.6],
+            ["x", "blue", 0.8],
+            ["y", "red", 0.4],
+            ["y", "blue", 0.2],
+        ]
+    )
 
-    #     # Create the third factor with scope [C]
-    #     factor3 = Factor("Factor_C", [C])
-    #     factor3.add_values(
-    #         [
-    #             ["red", 0.9],
-    #             ["blue", 0.7],
-    #         ]
-    #     )
+    # Create the third factor with scope [C]
+    factor3 = Factor("Factor_C", [C])
+    factor3.add_values(
+        [
+            ["red", 0.9],
+            ["blue", 0.7],
+        ]
+    )
 
-    #     # Print original factors
-    #     print("Factor 1:")
-    #     print(factor1.get_table())
-    #     print("\nFactor 2:")
-    #     print(factor2.get_table())
-    #     print("\nFactor 3:")
-    #     print(factor3.get_table())
+    # Print original factors
+    print("Factor 1:")
+    print(factor1.get_table())
+    print("\nFactor 2:")
+    print(factor2.get_table())
+    print("\nFactor 3:")
+    print(factor3.get_table())
 
-    #     # Multiply the factors
-    #     multiplied_factor = multiply([factor1, factor2, factor3])
-    #     print("\nResulting Factor After Multiplication:")
-    #     print(multiplied_factor.get_table())
-    # Define Variables
-    # A = Variable("A", [0, 1])
-    # B = Variable("B", [0, 1])
+    # Multiply the factors
+    multiplied_factor = multiply([factor1, factor2, factor3])
+    print("\nResulting Factor After Multiplication:")
+    print(multiplied_factor.get_table())
+    '''
 
-    # Define Factors
     # Define Factors
     factor_B = Factor("P(B)", [B])
     factor_B.add_values([[0, 0.5], [1, 0.5]])
@@ -527,5 +603,8 @@ def main():
 
 
 # # Run the main function
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    # main()
+    b = naive_bayes_model("data/adult-test.csv")
+    for i in range(6):
+        print(f"Question {i+1}: {explore(b, i+1)}")
