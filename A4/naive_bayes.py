@@ -433,8 +433,10 @@ def explore(bayes_net, question):
                 evid_list.append(var_dict[header[i]])
 
             ret = ve(bayes_net, var_dict["Salary"], evid_list)
-
+            # print(r[gender_idx])
             # Record when the model predicts >=50K
+            # ret.print_table()
+            # print(ret.get_value([salary_entry]))
             if ret.get_value([salary_entry]) > 0.5:
                 # Questions 1 and 2: Gender predicted with salary >= $50K
                 # Questions 5 and 6: Gender predicted with (P(Salary=">=$50K"|E) > 0.5) have an actual salary over $50K
@@ -603,8 +605,8 @@ def main():
 
 
 # # Run the main function
-if __name__ == "__main__":
-    # main()
-    b = naive_bayes_model("data/adult-test.csv")
-    for i in range(6):
-        print(f"Question {i+1}: {explore(b, i+1)}")
+# if __name__ == "__main__":
+#     # main()
+#     b = naive_bayes_model("data/adult-test.csv")
+#     for i in range(6):
+#         print(f"Question {i+1}: {explore(b, i+1)}")
