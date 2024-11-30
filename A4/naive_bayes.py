@@ -192,20 +192,15 @@ def ve(bayes_net, var_query, varlist_evidence):
     ### YOUR CODE HERE ###
     if var_query is None:
         var_query = bayes_net.variables()[0]
-    # print(var_query)
-    # for var in varlist_evidence:
-        # print(var)
+
     # Eliminate the hidden variable
     hidden_var = []
     for var in bayes_net.variables():
         if (var != var_query) and (var not in varlist_evidence):
-            # print(var)
             hidden_var.append(var)
-    # print(f"Hidden variable list: {hidden_var}")
 
     # Restrict factors
     restricted_f = []
-    # print("Restricted variables")
     for f in bayes_net.factors():
         # Restrict each variable to its observed value
         restrict_f = f
@@ -215,7 +210,6 @@ def ve(bayes_net, var_query, varlist_evidence):
 
                 restrict_f = restrict(restrict_f, var, evid)
                 restricted_f.append(restrict_f)
-                # restrict_f.print_table()
 
     # When there is no hidden variable
     if not hidden_var:
@@ -229,13 +223,9 @@ def ve(bayes_net, var_query, varlist_evidence):
         f_with_hidden = restricted_f
 
         mul_f = multiply(f_with_hidden)
-        # print(f"Multiplied variables {f_with_hidden}")
-        # mul_f.print_table()
 
         # Sum out hidden variable from the factor
         sum_out_f = sum_out(mul_f, var)
-        # print(f"Summed out variables {var}")
-        # sum_out_f.print_table()
 
         final_restricted_f.append(sum_out_f)
     factor = multiply(final_restricted_f)
@@ -433,10 +423,7 @@ def explore(bayes_net, question):
                 evid_list.append(var_dict[header[i]])
 
             ret = ve(bayes_net, var_dict["Salary"], evid_list)
-            # print(r[gender_idx])
             # Record when the model predicts >=50K
-            # ret.print_table()
-            # print(ret.get_value([salary_entry]))
             if ret.get_value([salary_entry]) > 0.5:
                 # Questions 1 and 2: Gender predicted with salary >= $50K
                 # Questions 5 and 6: Gender predicted with (P(Salary=">=$50K"|E) > 0.5) have an actual salary over $50K
