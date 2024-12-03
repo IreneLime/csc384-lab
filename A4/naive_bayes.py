@@ -190,6 +190,7 @@ def ve(bayes_net, var_query, varlist_evidence):
 
     """
     ### YOUR CODE HERE ###
+
     if var_query is None:
         var_query = bayes_net.variables()[0]
 
@@ -202,14 +203,14 @@ def ve(bayes_net, var_query, varlist_evidence):
     # Restrict factors
     restricted_f = []
     for f in bayes_net.factors():
-        # Restrict each variable to its observed value
         restrict_f = f
+        # Restrict each variable to its observed value
         for var in varlist_evidence:
-            if var in f.get_scope():
+            if var in restrict_f.get_scope():
                 evid = var.get_evidence()
 
                 restrict_f = restrict(restrict_f, var, evid)
-                restricted_f.append(restrict_f)
+        restricted_f.append(restrict_f)
 
     # When there is no hidden variable
     if not hidden_var:
@@ -217,12 +218,18 @@ def ve(bayes_net, var_query, varlist_evidence):
         return normalize(factor)
 
     # When there are hidden variables
-    final_restricted_f = []
+    final_restricted_f = restricted_f
     for var in hidden_var:
+        factor = []
+        restricted_f = final_restricted_f
+        final_restricted_f = []
+        for f in restricted_f:
+            if var in f.get_scope():
+                factor.append(f)
+            else:
+                final_restricted_f.append(f)
         # Multiply to produce factor
-        f_with_hidden = restricted_f
-
-        mul_f = multiply(f_with_hidden)
+        mul_f = multiply(factor)
 
         # Sum out hidden variable from the factor
         sum_out_f = sum_out(mul_f, var)
@@ -230,6 +237,7 @@ def ve(bayes_net, var_query, varlist_evidence):
         final_restricted_f.append(sum_out_f)
     factor = multiply(final_restricted_f)
     return normalize(factor)
+
 
     raise NotImplementedError
 
@@ -336,7 +344,7 @@ def naive_bayes_model(
             continue
 
         # Create variables
-        dependent_variable = Variable(variable, variable_domains[variable])
+        dependent_variable = Variable(f"{variable},{class_var.name}", variable_domains[variable])
         variable_list.append(dependent_variable)
 
         # Create a factor
@@ -402,10 +410,17 @@ def explore(bayes_net, question):
     # Make a dictionary with key = variable name and value = class Variable
     var_dict = {}
     for var in header:
-        var_dict[var] = bayes_net.get_variable(var)
+        if var != 'Salary':
+            var_dict[var] = bayes_net.get_variable(f"{var},Salary")
+        else:
+            var_dict[var] = bayes_net.get_variable(var)
 
     gender_idx = header.index('Gender')
     salary_idx = header.index('Salary')
+    work_idx = header.index('Work')
+    education_idx = header.index('Education')
+    occupation_idx = header.index('Occupation')
+    relationship_idx = header.index('Relationship')
     salary_entry = '>=50K'
     pred = 0
     count = 0
@@ -417,19 +432,23 @@ def explore(bayes_net, question):
             evid_list = []
             # Create evidence based on the current value of the row
             for i, data in enumerate(r):
-                if i in [gender_idx, salary_idx]:
-                    continue
-                var_dict[header[i]].set_evidence(data)
-                evid_list.append(var_dict[header[i]])
+                if i in [work_idx, education_idx, occupation_idx, relationship_idx]:
+                    var_dict[header[i]].set_evidence(data)
+                    evid_list.append(var_dict[header[i]])
 
             ret = ve(bayes_net, var_dict["Salary"], evid_list)
             # Record when the model predicts >=50K
             if ret.get_value([salary_entry]) > 0.5:
                 # Questions 1 and 2: Gender predicted with salary >= $50K
-                # Questions 5 and 6: Gender predicted with (P(Salary=">=$50K"|E) > 0.5) have an actual salary over $50K
-                if (question in [1, 2]) or (question in [5, 6] and r[salary_idx] == salary_entry):
+                if question in [1, 2]:
                     pred += 1
-            count += 1
+                # Questions 5 and 6: Gender predicted with (P(Salary=">=$50K"|E) > 0.5) have an actual salary over $50K
+                elif question in [5, 6]:
+                    count += 1
+                    if r[salary_idx] == salary_entry:
+                        pred += 1
+            if question in [1, 2]:
+                count += 1
     elif question in [3, 4]:
         for r in input_data:
             if (r[gender_idx] != 'Female' and question == 3) or (r[gender_idx] != 'Male' and question == 4):
@@ -437,10 +456,9 @@ def explore(bayes_net, question):
 
             evid_list = []
             for i, data in enumerate(r):
-                if i in [gender_idx, salary_idx]:
-                    continue
-                var_dict[header[i]].set_evidence(data)
-                evid_list.append(var_dict[header[i]])
+                if i in [work_idx, education_idx, occupation_idx, relationship_idx]:
+                    var_dict[header[i]].set_evidence(data)
+                    evid_list.append(var_dict[header[i]])
 
             # P(S|Evidence)
             evid_ve = ve(bayes_net, var_dict["Salary"], evid_list)
@@ -454,8 +472,9 @@ def explore(bayes_net, question):
                 pred += 1
             count += 1
 
+    if count == 0:
+        return 0
     return (pred / count) * 100
 
 
     raise NotImplementedError
-
